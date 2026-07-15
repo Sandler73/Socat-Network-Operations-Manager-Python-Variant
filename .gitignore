@@ -1,218 +1,273 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[codz]
-*$py.class
+# =============================================================================
+# .gitignore — Socat Network Operations Manager (Python Variant)
+# =============================================================================
+# Excludes runtime artifacts, session data, logs, certificates, Python
+# bytecode, virtual environments, and editor-specific files from version
+# control. Only source code, documentation, configuration templates, and
+# test source should be committed.
+# =============================================================================
 
-# C extensions
-*.so
+# -----------------------------------------------------------------------------
+# Runtime directories (created automatically by socat-manager)
+# These contain ephemeral session data, logs, and generated certificates
+# that are specific to each deployment and should never be committed.
+# -----------------------------------------------------------------------------
+
+# Session metadata files (contain PIDs, PGIDs, commands — deployment-specific)
+sessions/
+sessions/*.session
+sessions/*.pid
+sessions/*.stop
+sessions/*.launching
+sessions/.lock
+
+# Log files (master logs, session logs, error logs, capture logs)
+logs/
+logs/*.log
+
+# Auto-generated TLS certificates and private keys (tunnel mode)
+# CRITICAL: Private keys must NEVER be committed to version control
+certs/
+certs/*.pem
+certs/*.key
+certs/*.crt
+
+# Configuration directory (may contain deployment-specific port configs)
+# NOTE: Template configs (e.g., ports.conf.example) SHOULD be committed.
+conf/*.conf
+!conf/ports.conf.example
+
+# -----------------------------------------------------------------------------
+# Python bytecode and packaging artifacts
+# -----------------------------------------------------------------------------
+
+# Bytecode cache
+__pycache__/
+*.pyc
+*.pyo
+*.py[cod]
+*$py.class
+*.pyo
 
 # Distribution / packaging
-.Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
 *.egg
-MANIFEST
+.eggs/
+*.whl
+sdist/
+wheels/
 
-# PyInstaller
-#   Usually these files are written by a python script from a template
-#   before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
+# pip
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
+# Installer logs
+install.log
+
+# setuptools
+*.egg-info/
+.installed.cfg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# -----------------------------------------------------------------------------
+# Virtual environments
+# -----------------------------------------------------------------------------
+
+venv/
+.venv/
+env/
+.env/
+ENV/
+socat-manager-venv/
+
+# Conda
+*.conda
+conda-meta/
+
+# Pipenv
+Pipfile.lock
+
+# Poetry
+poetry.lock
+
+# -----------------------------------------------------------------------------
+# Testing and coverage artifacts
+# -----------------------------------------------------------------------------
+
+# pytest
+.pytest_cache/
+tests/tmp/
+tests/reports/
+
+# Coverage
 .coverage
 .coverage.*
-.cache
-nosetests.xml
+htmlcov/
 coverage.xml
 *.cover
-*.py.cover
-.hypothesis/
-.pytest_cache/
-cover/
+*.py,cover
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-# Pipfile.lock
-
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-# uv.lock
-
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-# poetry.lock
-# poetry.toml
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
-#   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
-# pdm.lock
-# pdm.toml
-.pdm-python
-.pdm-build/
-
-# pixi
-#   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
-# pixi.lock
-#   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
-#   in the .venv directory. It is recommended not to include this directory in version control.
-.pixi
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# Redis
-*.rdb
-*.aof
-*.pid
-
-# RabbitMQ
-mnesia/
-rabbitmq/
-rabbitmq-data/
-
-# ActiveMQ
-activemq-data/
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.envrc
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
+# tox
+.tox/
 
 # mypy
 .mypy_cache/
-.dmypy.json
 dmypy.json
+dmypy.txt
 
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#   JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#   be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#   and can be added to the global gitignore or merged into this file.  For a more nuclear
-#   option (not recommended) you can uncomment the following to ignore the entire idea folder.
-# .idea/
-
-# Abstra
-#   Abstra is an AI-powered process automation framework.
-#   Ignore directories containing user credentials, local state, and settings.
-#   Learn more at https://abstra.io/docs
-.abstra/
-
-# Visual Studio Code
-#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#   and can be added to the global gitignore or merged into this file. However, if you prefer, 
-#   you could uncomment the following to ignore the entire vscode folder
-# .vscode/
-# Temporary file for partial code execution
-tempCodeRunnerFile.py
-
-# Ruff stuff:
+# ruff
 .ruff_cache/
 
-# PyPI configuration file
-.pypirc
+# Hypothesis (property-based testing)
+.hypothesis/
 
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
+# TAP output
+*.tap
 
-# Streamlit
-.streamlit/secrets.toml
+# -----------------------------------------------------------------------------
+# IDE and editor artifacts
+# -----------------------------------------------------------------------------
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs (PyCharm, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim / Neovim
+*.vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+tags
+*~
+
+# Emacs
+\#*\#
+.#*
+*.elc
+auto-save-list
+tramp
+.projectile
+*.org
+
+# Atom
+.atom/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Spyder
+.spyderproject
+.spyproject
+
+# -----------------------------------------------------------------------------
+# OS artifacts
+# -----------------------------------------------------------------------------
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon?
+
+# Linux
+*~
+*.swp
+*.swo
+*.swn
+.nfs*
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+[Dd]esktop.ini
+
+# -----------------------------------------------------------------------------
+# Build and distribution artifacts
+# Release tarballs, checksums, and dist output are build products.
+# Generated by `make dist` — not source.
+# -----------------------------------------------------------------------------
+
+dist/
+*.tar.gz
+*.tar.bz2
+*.zip
+*.7z
+*.sha256
+
+# -----------------------------------------------------------------------------
+# Security-sensitive files that must NEVER be committed
+# (Belt-and-suspenders with certs/ exclusion above)
+# -----------------------------------------------------------------------------
+
+# Private keys and credentials
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.secret
+*.password
+*.credentials
+*.token
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+.envrc
+
+# Shell history
+.bash_history
+.zsh_history
+.python_history
+
+# -----------------------------------------------------------------------------
+# Temporary and backup files
+# -----------------------------------------------------------------------------
+
+*.tmp
+*.temp
+*.bak
+*.orig
+*.backup
+*.old
+*.rej
+*.patch
+
+# Node.js (if any tooling uses npm)
+node_modules/
+package-lock.json
+yarn.lock
