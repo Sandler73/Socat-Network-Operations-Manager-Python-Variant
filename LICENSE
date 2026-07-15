@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 Ryan
+Copyright (c) 2026 Socat Network Operations Manager Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,109 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+--- Disclaimer of Warranty ---
+
+THE SOFTWARE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT
+WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. THE AUTHORS AND
+CONTRIBUTORS MAKE NO REPRESENTATIONS OR WARRANTIES WITH RESPECT TO THE
+ACCURACY, COMPLETENESS, RELIABILITY, SECURITY, TIMELINESS, OR SUITABILITY
+OF THE SOFTWARE FOR ANY PARTICULAR PURPOSE. NO ADVICE OR INFORMATION, WHETHER
+ORAL OR WRITTEN, OBTAINED FROM THE AUTHORS OR THROUGH THE SOFTWARE SHALL
+CREATE ANY WARRANTY NOT EXPRESSLY STATED IN THIS LICENSE.
+
+
+--- Limitation of Liability ---
+
+IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS, OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; BUSINESS INTERRUPTION; NETWORK
+DISRUPTION; DATA LOSS; OR UNAUTHORIZED ACCESS) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+--- Authorized Use Notice ---
+
+This software is intended for authorized network operations, security testing,
+penetration testing, research, and educational purposes only. Users are solely
+responsible for ensuring their use of this software complies with all
+applicable local, state, national, and international laws and regulations,
+including but not limited to computer fraud statutes, wiretapping laws, privacy
+regulations, and network access authorization requirements.
+
+Use of this software for unauthorized network access, interception of
+communications without consent, disruption of network services, or any other
+unlawful activity is strictly prohibited. The authors and contributors assume
+no liability for misuse or for any damages resulting from the use of this
+software in violation of applicable laws.
+
+
+--- Network Operations Disclaimer ---
+
+This software creates, manages, and terminates network listeners, forwarders,
+tunnels, and redirectors using socat. These operations inherently involve
+binding ports, intercepting traffic, and relaying data between endpoints.
+Users must ensure they have proper authorization from all relevant network
+administrators and asset owners before deploying any operational mode.
+
+The authors make no guarantees about the behavior of socat or the underlying
+operating system's network stack. Network operations may interact with
+firewalls, intrusion detection systems, security monitoring tools, and other
+network infrastructure in unpredictable ways. Users bear sole responsibility
+for understanding and managing these interactions.
+
+
+--- Data Handling Notice ---
+
+Traffic capture mode records network data to local log files. Users are
+responsible for the secure handling, storage, retention, and disposal of
+captured data in compliance with applicable data protection regulations
+(including but not limited to GDPR, CCPA, HIPAA, PCI DSS, and similar
+frameworks). The software sets restrictive file permissions (0o600) on capture
+logs and private keys, but users must implement additional organizational and
+technical controls appropriate to their environment.
+
+
+--- Cryptographic Notice ---
+
+This software uses OpenSSL for TLS certificate generation and encrypted tunnel
+operations. The generated self-signed certificates are intended for testing and
+internal use only — they do not provide identity verification. Users requiring
+production-grade TLS should obtain certificates from a trusted Certificate
+Authority. Export, import, or use of cryptographic software may be subject to
+government regulations in certain jurisdictions.
+
+
+--- Third-Party Dependencies ---
+
+This software relies on the following external tools, each distributed under
+their own respective licenses:
+
+  - socat (http://www.dest-unreach.org/socat/) — GPLv2
+  - OpenSSL (https://www.openssl.org/) — Apache License 2.0
+  - Python (https://www.python.org/) — PSF License
+
+Users should review and comply with the license terms of all dependencies.
+The Python implementation uses only the Python standard library at runtime
+(zero external PyPI dependencies), but development and testing may use
+additional tools (pytest, ruff, coverage).
+
+
+--- Indemnification ---
+
+By using this software, you agree to indemnify, defend, and hold harmless the
+authors, contributors, and maintainers from and against any and all claims,
+damages, losses, liabilities, costs, and expenses (including reasonable
+attorney's fees) arising from your use of the software or your violation of
+this license or applicable laws.
+
+
+--- Governing Law ---
+
+This license shall be governed by and construed in accordance with the laws
+of the jurisdiction in which the primary maintainer resides, without regard
+to conflict of laws principles.
