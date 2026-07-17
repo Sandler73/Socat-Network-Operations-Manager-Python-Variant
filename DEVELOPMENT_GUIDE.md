@@ -15,8 +15,8 @@ make test
 
 ```
 src/socat_manager/          # Production source code (21 files, ~6,800 lines)
-tests/unit/                 # Unit tests (355 tests) — fast, no I/O
-tests/integration/          # Integration tests (155 tests) — cross-module behavior
+tests/unit/                 # Unit tests (599 tests) — fast, no I/O
+tests/integration/          # Integration tests (158 tests) — cross-module behavior
 tests/stubs/                # Mock binaries (socat, ss, openssl)
 tests/conftest.py           # Shared fixtures (isolated_base_dir, sample_session)
 docs/                       # Documentation (12 files)
@@ -61,7 +61,7 @@ make clean             # Remove build artifacts
 | tests/integration/test_capture.py | 15 | -v flag propagation, log permissions |
 | tests/integration/test_menu.py | 57 | Cancel detection, prompt validation, submenus |
 | tests/integration/test_modes.py | 19 | mode_status, mode_stop (all selectors) |
-| tests/integration/test_mode_handlers.py | 29 | All 5 mode handlers end-to-end |
+| tests/integration/test_mode_handlers.py | 31 | All 5 mode handlers end-to-end |
 
 ### Test Fixtures (conftest.py)
 
@@ -99,22 +99,24 @@ PYTHONPATH=src python3 -m pytest tests/unit/test_session.py::TestSessionReadAllF
 
 ## CI Pipeline
 
-GitHub Actions runs on 8 platforms:
-- Ubuntu 22.04, Ubuntu 24.04
-- Debian 12
-- Kali Rolling
-- Rocky 9, Alma 9
-- Arch Linux (latest)
+GitHub Actions runs several workflows on pushes and pull requests:
 
-Pipeline steps: checkout → install Python 3.12 → install deps → make lint → make test
+- **Tests** (`test.yml`): the full suite across 8 Linux platforms — Ubuntu 22.04, Ubuntu 24.04 (Python 3.12 and 3.13), Debian 12, Kali Rolling, Rocky 9, Alma 9, and Arch Linux. Each job installs socat and the optional tools, runs the unit and integration suites, produces a coverage report, and uploads `coverage.xml` as an artifact from the Ubuntu 24.04 job.
+- **Lint** (`lint.yml`): the ruff linter (E, W, F, I), the ruff flake8-bandit security scan (S-rules, with the by-design subprocess rules S603/S607 excluded), and a non-blocking mypy type check. Mirrors the `lint`, `security`, and `type-check` Makefile targets.
+- **CodeQL** (`codeql.yml`): GitHub's security-and-quality analysis over the Python source, on push, pull request, and a weekly schedule.
+- **Dependency Review** (`dependency-review.yml`): inspects dependency changes on pull requests and fails on a high-severity or disallowed-license introduction.
+- **Release** (`release.yml`): builds the distributions and publishes a GitHub release when a `v*` tag is pushed.
+
+Each workflow declares least-privilege `permissions` and cancels superseded in-progress runs for the same ref.
 
 ## Code Quality
 
 ### Linting
 ```bash
-make lint
-# Ruff rules: E (errors), W (warnings), F (pyflakes), I (import sorting)
-# Line length: 120 (E501 ignored)
+make lint          # ruff E, W, F, I (line length 120, E501 ignored)
+make security      # ruff flake8-bandit S-rules (S603/S607 excluded by design)
+make type-check    # mypy, if installed
+make check         # aggregate gate: lint + security + tests + docs
 ```
 
 ### Type Hints
@@ -133,6 +135,6 @@ make test
 # 4. Build distribution:
 make dist
 # 5. Tag and push:
-git tag -a v0.9.0 -m "Release v0.9.0"
-git push origin v0.9.0
+git tag -a v1.0.1 -m "Release v1.0.1"
+git push origin v1.0.1
 ```
