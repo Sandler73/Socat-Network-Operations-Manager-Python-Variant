@@ -12,7 +12,7 @@
 #               - --pid is validated as numeric before any use (SEC-01)
 #               - After --all, orphaned socat processes are reported
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Stop mode handler — session termination by various selectors."""
