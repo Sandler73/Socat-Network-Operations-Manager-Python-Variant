@@ -1,0 +1,49 @@
+# ==============================================================================
+# FILE        : example-san.cnf
+# ==============================================================================
+# Synopsis    : Example OpenSSL configuration for a self-signed certificate
+#               with Subject Alternative Names (SAN).
+# Description : The built-in generator (tunnel mode) produces a certificate with
+#               a Common Name only. Many TLS clients now require the hostname to
+#               appear in the SAN extension instead of, or in addition to, the
+#               CN. This configuration adds a SAN list so a generated example
+#               certificate validates against modern clients when the endpoint
+#               is addressed by these names or addresses.
+#
+#               Use with generate-example-cert.sh, or directly:
+#                 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+#                   -keyout mykey.key -out mycert.crt \
+#                   -config example-san.cnf -extensions v3_req
+#
+#               Edit the [alt_names] section to match the hostnames and
+#               addresses your endpoint will actually be reached by.
+# Notes       : This produces a SELF-SIGNED certificate. Self-signed
+#               certificates are appropriate for testing and for closed
+#               deployments where both ends trust the certificate explicitly.
+#               For anything exposed to untrusted networks, use a certificate
+#               issued by a trusted certificate authority.
+# Version     : 1.0.1
+# ==============================================================================
+
+[req]
+default_bits        = 2048
+prompt              = no
+default_md          = sha256
+distinguished_name  = dn
+req_extensions      = v3_req
+x509_extensions     = v3_req
+
+[dn]
+CN = localhost
+
+[v3_req]
+basicConstraints     = CA:FALSE
+keyUsage             = digitalSignature, keyEncipherment
+extendedKeyUsage     = serverAuth, clientAuth
+subjectAltName       = @alt_names
+
+[alt_names]
+DNS.1 = localhost
+DNS.2 = localhost.localdomain
+IP.1  = 127.0.0.1
+IP.2  = ::1
