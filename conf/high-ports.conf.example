@@ -1,0 +1,22 @@
+# ==============================================================================
+# FILE        : high-ports.conf.example
+# ==============================================================================
+# Synopsis    : Example batch listener configuration — high/ephemeral ports
+# Description : One port per line. Lines starting with # are comments; blank
+#               lines are ignored; invalid lines are skipped with a warning.
+#               Inline comments are NOT supported: a port must be alone on its
+#               line. Use with:
+#               socat-manager batch --file high-ports.conf.example
+# Notes       : All ports here are above 1024 and bind without root.
+# Version     : 1.0.1
+# ==============================================================================
+
+10000
+10001
+10002
+20000
+30000
+40000
+# Start of the dynamic/ephemeral range
+49152
+55555

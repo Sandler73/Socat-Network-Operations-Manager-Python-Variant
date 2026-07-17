@@ -1,0 +1,28 @@
+# ==============================================================================
+# FILE        : database-services.conf.example
+# ==============================================================================
+# Synopsis    : Example batch listener configuration — common database ports
+# Description : One port per line. Lines starting with # are comments; blank
+#               lines are ignored; invalid lines are skipped with a warning.
+#               Inline comments are NOT supported: a port must be alone on its
+#               line. Use with:
+#               socat-manager batch --file database-services.conf.example
+# Notes       : Listening on database ports is typically used to capture or
+#               observe client connection attempts, not to serve a database.
+# Version     : 1.0.1
+# ==============================================================================
+
+# MySQL / MariaDB
+3306
+# PostgreSQL
+5432
+# Redis
+6379
+# MongoDB
+27017
+# Microsoft SQL Server
+1433
+# Cassandra
+9042
+# CouchDB
+5984

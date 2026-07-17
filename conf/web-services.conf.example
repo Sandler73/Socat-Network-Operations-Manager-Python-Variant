@@ -1,0 +1,30 @@
+# ==============================================================================
+# FILE        : web-services.conf.example
+# ==============================================================================
+# Synopsis    : Example batch listener configuration — common web service ports
+# Description : One port per line. Lines starting with # are comments; blank
+#               lines are ignored; invalid lines are skipped with a warning.
+#               Inline comments are NOT supported: a port must be alone on its
+#               line. Use with:
+#               socat-manager batch --file web-services.conf.example
+# Notes       : Ports below 1024 require root/sudo to bind.
+# Version     : 1.0.1
+# ==============================================================================
+
+# Standard web (require root)
+# 80
+# 443
+
+# Node / React dev servers
+3000
+# Flask / general app servers
+5000
+# Django / general HTTP
+8000
+# HTTP alternates and proxies
+8080
+8081
+# HTTPS alternate
+8443
+# Dashboards / metrics UIs
+9090
