@@ -14,7 +14,7 @@
 #               - Confirmation shows constructed command before execution
 #               - Dependency check shows all required/optional commands
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Interactive menu system for socat-manager."""
@@ -45,6 +45,8 @@ from socat_manager.validation import (
     validate_protocol,
     validate_session_name,
     validate_socat_opts,
+    validate_source_range,
+    validate_tcpwrap_name,
 )
 
 # ==============================================================================
@@ -338,6 +340,47 @@ def _collect_common_flags(
     if name:
         args.extend(["--name", name])
 
+    # Source filtering (range=, tcpwrap=)
+    _collect_filter_flags(args)
+
+
+def _collect_filter_flags(args: list[str]) -> None:
+    """Collect optional source-filter flags, appending them in place.
+
+    Offers a source address restriction (--allow, validated as a CIDR with
+    retry) and TCP wrappers (--tcpwrap, with a daemon name). Both are declined
+    by default so the prompts add nothing unless the operator opts in.
+
+    Args:
+        args: Command argument list to append to.
+
+    Raises:
+        _MenuCancel: On cancel at any prompt.
+    """
+    if _prompt_yn("Restrict allowed source address range?"):
+        while True:
+            cidr: str = _prompt("Allowed source CIDR (e.g. 10.0.0.0/8)")
+            if not cidr:
+                break
+            try:
+                validate_source_range(cidr)
+                args.extend(["--allow", cidr])
+                break
+            except ValidationError:
+                _print_error(
+                    "Invalid CIDR. Examples: 10.0.0.0/8, 192.168.1.0/24, 2001:db8::/32"
+                )
+
+    if _prompt_yn("Enforce access with TCP wrappers (hosts.allow/deny)?"):
+        while True:
+            wrap_name: str = _prompt("TCP wrappers daemon name", "socat")
+            try:
+                validate_tcpwrap_name(wrap_name)
+                args.extend(["--tcpwrap", wrap_name])
+                break
+            except ValidationError:
+                _print_error("Invalid name. Allowed: 1-64 of alphanumerics and . _ -")
+
 
 # ==============================================================================
 # PER-MODE SUBMENUS
@@ -359,7 +402,10 @@ def _menu_listen() -> list[str] | None:
 
     # Bind address
     if _prompt_yn("Bind to a specific address?"):
-        bind_addr: str = _prompt_host("Bind address", "0.0.0.0")
+        # 0.0.0.0 is the conventional listener default (bind all interfaces),
+        # offered only after the operator explicitly opts into setting a bind
+        # address. Any other new bind-all in the codebase should still be flagged.
+        bind_addr: str = _prompt_host("Bind address", "0.0.0.0")  # noqa: S104
         args.extend(["--bind", bind_addr])
 
     # Socat opts with examples
@@ -468,6 +514,8 @@ def _menu_tunnel() -> list[str] | None:
         args.append("--watchdog")
     if _prompt_yn("Add plaintext UDP forwarder (dual-stack)?"):
         args.append("--dual-stack")
+
+    _collect_filter_flags(args)
 
     name: str = _prompt_name("Session name (Enter for default)")
     if name:
