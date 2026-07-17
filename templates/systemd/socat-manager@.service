@@ -1,0 +1,61 @@
+# ==============================================================================
+# FILE        : socat-manager@.service
+# ==============================================================================
+# Synopsis    : systemd template unit for a per-port socat-manager listener.
+# Description : A templated (instantiated) unit. The instance name after the @
+#               is the port. Starting socat-manager@8080 launches a listener on
+#               port 8080 at boot and stops it cleanly on service stop.
+#
+#                 sudo cp socat-manager@.service /etc/systemd/system/
+#                 sudo systemctl daemon-reload
+#                 sudo systemctl enable --now socat-manager@8080
+#                 sudo systemctl status socat-manager@8080
+#                 sudo systemctl stop socat-manager@8080
+#
+# Notes       : socat-manager launches the socat process into its own process
+#               group and returns, so this unit is Type=oneshot with
+#               RemainAfterExit=yes: the service is considered active for as
+#               long as the listener should exist, and ExecStop tears it down.
+#
+#               Per-crash automatic restart of an individual socat process is
+#               provided by the built-in --watchdog, which runs while a
+#               socat-manager process is resident; it is intentionally omitted
+#               here because the oneshot manager process exits after launching.
+#               If you need the built-in watchdog, run socat-manager in the
+#               foreground under a Type=simple unit of your own instead.
+#
+#               Adjust User, the install path, and SOCAT_MANAGER_BASE to match
+#               your deployment. Replace the placeholders marked CHANGE-ME.
+# Version     : 1.0.1
+# ==============================================================================
+
+[Unit]
+Description=socat-manager listener on port %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# CHANGE-ME: the account the listener should run as (avoid root unless the
+# port is privileged and no capability grant is available).
+User=socat
+Group=socat
+
+# CHANGE-ME: base directory for sessions/, logs/, and certs/.
+Environment=SOCAT_MANAGER_BASE=/var/lib/socat-manager
+
+# CHANGE-ME: path to the installed executable (or use `python3 -m socat_manager`).
+ExecStart=/usr/local/bin/socat-manager listen --port %i --log-level INFO
+ExecStop=/usr/local/bin/socat-manager stop --port %i
+
+# Hardening — tighten further to your environment as appropriate.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/socat-manager
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,33 @@
+# ==============================================================================
+# FILE        : socat-manager (logrotate configuration)
+# ==============================================================================
+# Synopsis    : logrotate configuration for socat-manager log output.
+# Description : Rotates the master, session, error, and capture logs written
+#               under the runtime logs/ directory. Install as:
+#
+#                 sudo cp socat-manager /etc/logrotate.d/socat-manager
+#                 sudo chmod 0644 /etc/logrotate.d/socat-manager
+#                 sudo logrotate --debug /etc/logrotate.d/socat-manager
+#
+# Notes       : CHANGE-ME: replace the path below with your actual logs/
+#               directory (SOCAT_MANAGER_BASE/logs, e.g.
+#               /var/lib/socat-manager/logs). The tool names its files
+#               socat-manager-<timestamp>.log, session-<sid>.log,
+#               session-<sid>-error.log, and capture-*.log, all matched by the
+#               glob below. copytruncate is used because a new master log is
+#               opened per invocation and long-lived writers may hold a handle.
+# Version     : 1.0.1
+# ==============================================================================
+
+# CHANGE-ME: point this at your runtime logs directory.
+/var/lib/socat-manager/logs/*.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    dateext
+    su socat socat
+}
