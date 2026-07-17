@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.9.0-blue?style=flat-square" alt="Version 0.9.0">
+  <img src="https://img.shields.io/badge/version-1.0.1-blue?style=flat-square" alt="Version 1.0.1">
   <img src="https://img.shields.io/badge/python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/platform-linux-FCC624?style=flat-square&logo=linux&logoColor=black" alt="Linux">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License">
@@ -20,7 +20,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/ruff-passing-7B68EE?style=flat-square&logo=python&logoColor=white" alt="Ruff">
-  <img src="https://img.shields.io/badge/pytest-510%20tests-blue?style=flat-square" alt="510 Tests">
+  <img src="https://img.shields.io/badge/pytest-757%20tests-blue?style=flat-square" alt="757 Tests">
   <img src="https://img.shields.io/badge/coverage-68%25-yellow?style=flat-square" alt="Coverage">
   <img src="https://img.shields.io/badge/dependencies-0%20runtime-brightgreen?style=flat-square" alt="Zero Dependencies">
 </p>
@@ -772,62 +772,74 @@ Structured log entries include timestamp, level, correlation ID, component, and 
 ## Directory Structure
 
 ```
-socat-manager-python/                # Repository root
+socat-manager-python/                # Repository root (published layout)
 ├── socat-manager.py                 # Standalone runner (no pip install needed)
+├── README.md                        # This file
 ├── LICENSE                          # MIT License with supplemental sections
-├── Makefile                         # Build, test, install, package (14 targets)
+├── SECURITY.md                      # STRIDE threat model, defense-in-depth, reporting
+├── CONTRIBUTING.md                  # Contribution guidelines
+├── CODE_OF_CONDUCT.md               # Community standards
+├── CHANGELOG.md                     # Version history
+├── Makefile                         # Build, test, install, package
 ├── pyproject.toml                   # Project metadata and tool configuration
 ├── .gitignore                       # Git ignore rules
 ├── src/socat_manager/
-│   ├── __init__.py                  # Package version
+│   ├── __init__.py                  # Package version and metadata
 │   ├── __main__.py                  # Entry point, signal handlers, dispatch
 │   ├── cli.py                       # argparse with 10 subcommands
-│   ├── menu.py                      # Interactive TUI with paired forward
+│   ├── menu.py                      # Interactive TUI
 │   ├── config.py                    # Constants, dataclasses, protocol maps
 │   ├── logging_setup.py             # Dual-output structured logging
-│   ├── validation.py                # 9 whitelist validators (trust boundary)
+│   ├── validation.py                # 11 whitelist validators (trust boundary)
 │   ├── session.py                   # CRUD, locking, migration, bulk reader
 │   ├── commands.py                  # 4 socat command builders
-│   ├── process.py                   # Launch (setsid), 9-step stop, port checks
+│   ├── process.py                   # Launch (setsid), stop sequence, port checks
 │   ├── watchdog.py                  # Monitor-first auto-restart
 │   ├── certs.py                     # TLS self-signed cert generation
-│   └── modes/
+│   ├── audit.py                     # SQLite audit store (on by default)
+│   └── modes/                       # 8 mode handlers
 │       ├── listen.py, batch.py      # Listener modes
 │       ├── forward.py               # Bidirectional relay
 │       ├── tunnel.py                # TLS-encrypted tunnel
 │       ├── redirect.py              # Transparent redirection
 │       ├── status.py                # Session status display
-│       └── stop.py                  # Session termination
+│       ├── stop.py                  # Session termination
+│       └── audit_view.py            # Audit history display (read-only)
 ├── tests/
 │   ├── conftest.py                  # Shared fixtures
-│   ├── unit/                        # 355 unit tests (12 files)
-│   ├── integration/                 # 155 integration tests (6 files)
+│   ├── unit/                        # 599 unit tests (22 files)
+│   ├── integration/                 # 158 integration tests (6 files)
 │   └── stubs/                       # Mock socat, ss, openssl binaries
-├── docs/
-│   ├── README.md                    # Documentation index
+├── docs/                            # Long-form guides
 │   ├── USAGE_GUIDE.md               # Full usage reference
 │   ├── SETUP_GUIDE.md               # Installation and configuration
-│   ├── SECURITY.md                  # STRIDE threat model, 7-layer defense
-│   ├── CONTRIBUTING.md              # Contribution guidelines
-│   ├── CHANGELOG.md                 # Version history
-│   ├── CODE_OF_CONDUCT.md           # Community standards
-│   ├── TROUBLESHOOTING.md           # Common issues and solutions
-│   ├── Frequently_Asked_Questions_(FAQ).md
+│   ├── DEVELOPER_GUIDE.md           # Exhaustive code reference
 │   ├── DEVELOPMENT_GUIDE.md         # Development workflow
-│   ├── DEVELOPER_GUIDE.md           # Exhaustive code reference (2,400+ lines)
-│   └── wiki/                        # 15 standalone GitHub wiki pages
+│   ├── TROUBLESHOOTING.md           # Common issues and solutions
+│   └── Frequently_Asked_Questions_(FAQ).md
 ├── .github/
-│   ├── workflows/test.yml           # CI: lint + pytest on push/PR
-│   └── workflows/release.yml        # CD: build + publish on tag
-├── conf/
-│   └── ports.conf.example           # Example batch config
-└── tasks/                           # Project tracking
-    ├── todo.md, lessons.md
-    ├── gap_analysis.md
-    └── bug_report_session8.md
+│   ├── workflows/                   # tests, lint, CodeQL, dependency review, release
+│   ├── ISSUE_TEMPLATE/              # Issue forms
+│   └── PULL_REQUEST_TEMPLATE.md     # Pull request checklist
+├── conf/                            # Example batch configurations (port lists)
+│   ├── README.md                    # Config format and usage
+│   ├── ports.conf.example           # General starting point
+│   ├── web-services.conf.example    # Common web/app ports
+│   ├── database-services.conf.example  # Common database ports
+│   └── high-ports.conf.example      # High/ephemeral ports
+├── certs/                           # TLS certificate examples and generator
+│   ├── README.md                    # Generation guide and key handling
+│   ├── example-san.cnf              # OpenSSL SAN configuration
+│   ├── generate-example-cert.sh     # Produces the disposable example pair
+│   └── example-do-not-use.{crt,key} # Disposable self-signed example (never for real traffic)
+└── templates/                       # Deployment templates
+    ├── README.md                    # Install and usage guide
+    ├── systemd/socat-manager@.service   # Per-port listener unit
+    ├── logrotate/socat-manager      # Log rotation config
+    └── socat-profiles/profiles.conf # Reusable --socat-opts strings
 ```
 
-Runtime directories (`sessions/`, `logs/`, `certs/`) are created automatically on first run and excluded from version control by `.gitignore`.
+Prose guides live under `docs/`. The full reference documentation is published to the GitHub Wiki. Runtime directories (`sessions/`, `logs/`, `certs/` output) are created automatically on first run and excluded from version control by `.gitignore`.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -919,7 +931,7 @@ For additional troubleshooting, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTI
 
 ## Testing
 
-The project includes a full test suite with 510 tests covering validation, session management, lifecycle operations, protocol-scoped stop, traffic capture, watchdog behavior, CLI parsing, and mode handler execution.
+The project includes a full test suite with 757 tests covering validation, session management, lifecycle operations, protocol-scoped stop, traffic capture, watchdog behavior, CLI parsing, and mode handler execution.
 
 ```bash
 # Run the full test suite (lint + all tests)
@@ -954,7 +966,7 @@ make test-smoke
 | `tests/unit/test_watchdog.py` | 10 | Backoff, stop signal, max restarts, monitor-first |
 | `tests/unit/test_certs.py` | 8 | OpenSSL subprocess, error handling |
 | `tests/integration/test_menu.py` | 57 | Cancel detection, prompt validation, submenus |
-| `tests/integration/test_mode_handlers.py` | 29 | All 5 mode handlers end-to-end |
+| `tests/integration/test_mode_handlers.py` | 31 | All 5 mode handlers end-to-end |
 | `tests/integration/test_lifecycle.py` | 22 | Launch→find→stop, max sessions, dual-stack |
 | `tests/integration/test_modes.py` | 19 | mode_status, mode_stop with all selectors |
 | `tests/integration/test_capture.py` | 15 | -v flag propagation, log permissions |
@@ -978,7 +990,7 @@ Contributions are welcome and appreciated. To contribute:
 
 ### Guidelines
 
-- Run `make test` before submitting — all 510 tests must pass
+- Run `make test` before submitting — the full suite (757 tests) must pass
 - Run `make lint` — ruff must report no errors
 - Follow the existing code style: type hints, Google-style docstrings, thorough comments
 - All user-supplied inputs must pass through the existing validation functions
