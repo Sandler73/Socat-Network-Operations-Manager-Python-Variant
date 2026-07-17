@@ -17,7 +17,7 @@
 #               - Signal handlers: SIGINT, SIGTERM for clean shutdown
 #               - No EXIT trap (sessions survive script exit via setsid)
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Entry point for socat-manager: CLI dispatch and menu fallback."""
@@ -134,24 +134,44 @@ def check_socat() -> None:
 # ==============================================================================
 
 def initialize_logging(args: Any) -> None:
-    """Apply the verbose flag and configure logging for this invocation.
+    """Resolve the logging controls and configure logging for this invocation.
 
     This is the single initialization point for logging. It runs once per
     invocation, before any path that produces output — the interactive menu,
-    the mode handlers, and the startup banner all depend on it. The verbose
-    flag must be applied before the logger is configured, because the flag
-    determines the effective log level and the configured level is fixed once
-    the handlers are attached.
+    the mode handlers, and the startup banner all depend on it. The effective
+    level must be resolved and applied before the logger is configured, because
+    the configured level is fixed once the handlers are attached.
+
+    The effective console level is derived from three optional controls, in
+    order of precedence: an explicit --log-level, then --verbose (DEBUG), then
+    --quiet (WARNING), defaulting to INFO. Any of the three may be absent from
+    the namespace (not every subcommand defines them), which is handled by
+    reading each with a default.
 
     Args:
-        args: Parsed argparse Namespace, which may carry a 'verbose' flag.
+        args: Parsed argparse Namespace, which may carry 'log_level',
+              'verbose', and 'quiet' attributes.
     """
+    import logging
+
     import socat_manager.logging_setup as ls
 
-    if getattr(args, "verbose", False):
-        ls.verbose_mode = True
+    level: int = ls.resolve_log_level(
+        log_level=getattr(args, "log_level", None),
+        verbose=getattr(args, "verbose", False),
+        quiet=getattr(args, "quiet", False),
+    )
 
-    setup_logging()
+    # Keep the convenience predicate aligned with the resolved level so any
+    # reader of verbose_mode continues to reflect "are we at DEBUG?".
+    ls.verbose_mode = level == logging.DEBUG
+
+    setup_logging(log_level=level)
+
+    # Honor the --no-audit opt-out for this invocation (auditing is on by
+    # default). The audit store itself checks SOCAT_MANAGER_AUDIT as well.
+    from socat_manager import audit
+    audit.set_cli_disabled(bool(getattr(args, "no_audit", False)))
 
 
 # ==============================================================================
@@ -194,6 +214,9 @@ def dispatch_mode(args: Any) -> None:
             mode_status(args)
         case "stop":
             mode_stop(args)
+        case "audit":
+            from socat_manager.modes.audit_view import mode_audit
+            mode_audit(args)
         case "menu":
             from socat_manager.menu import interactive_menu
             interactive_menu()
@@ -268,8 +291,8 @@ def main() -> None:
     migrate_legacy_sessions()
 
     # Check socat availability for operational modes
-    # Skip for status, stop, help — they don't need socat
-    needs_socat: bool = args.mode not in ("status", "stop", "help", "version")
+    # Skip for status, stop, audit, help — they don't need socat
+    needs_socat: bool = args.mode not in ("status", "stop", "audit", "help", "version")
     if needs_socat:
         check_socat()
 
