@@ -107,7 +107,7 @@ PYTHONPATH=src python3 -m pytest tests/ -q
 ### Project Structure
 
 ```
-src/socat_manager/          # Production source (19 files, 6,779 lines)
+src/socat_manager/          # Production source (21 modules, 8,761 lines)
 ├── __init__.py             # Package version
 ├── __main__.py             # Entry point, signal handlers, dispatch
 ├── config.py               # Constants, frozen dataclasses, protocol maps
@@ -120,15 +120,15 @@ src/socat_manager/          # Production source (19 files, 6,779 lines)
 ├── certs.py                # TLS certificate generation
 ├── cli.py                  # argparse (10 subcommands)
 ├── menu.py                 # Interactive TUI
-└── modes/                  # 7 mode handlers
+└── modes/                  # 8 mode handlers
     ├── listen.py, batch.py, forward.py
     ├── tunnel.py, redirect.py
     ├── status.py, stop.py
 
-tests/                       # Test suite (510 tests)
+tests/                       # Test suite (757 tests)
 ├── conftest.py             # Shared fixtures
-├── unit/                   # 355 unit tests (12 files)
-├── integration/            # 155 integration tests (6 files)
+├── unit/                   # 599 unit tests (22 files)
+├── integration/            # 158 integration tests (6 files)
 └── stubs/                  # Mock socat, ss, openssl binaries
 ```
 
@@ -193,8 +193,8 @@ Current threshold: 68% minimum. Core modules (commands, validation, cli, config)
 
 | Directory | Tests | Focus | Speed |
 |-----------|-------|-------|-------|
-| `tests/unit/` | 355 | Individual functions, validators, parsers | Fast (~3s) |
-| `tests/integration/` | 155 | Cross-module behavior, session lifecycle | Medium (~6s) |
+| `tests/unit/` | 599 | Individual functions, validators, parsers | Fast (~3s) |
+| `tests/integration/` | 158 | Cross-module behavior, session lifecycle | Medium (~6s) |
 
 Unit tests mock all subprocess calls and filesystem operations. Integration tests use the `paths` fixture for isolated temporary directories.
 
@@ -399,7 +399,7 @@ Examples:
 1. Fork the repository
 2. Create a feature branch from `main`
 3. Make your changes with tests
-4. Run `make test` — all 510 tests must pass, 0 lint errors
+4. Run `make test` — the full suite (757 tests) must pass, 0 lint errors
 5. Update documentation and CHANGELOG
 6. Push to your fork
 7. Open a Pull Request with:
@@ -426,15 +426,32 @@ Before requesting review, verify:
 
 ## Reporting Bugs
 
-1. Check [existing issues](https://github.com/Sandler73/Socat-Network-Operations-Manager/issues) first
-2. Open a new issue with:
-   - Python version (`python3 --version`)
-   - Operating system and version
-   - socat version (`socat -V | head -2`)
-   - Exact command run
-   - Full error output (stderr)
-   - Steps to reproduce
-   - Expected vs actual behavior
+Bug reports are filed through the structured issue forms. Opening a new issue
+presents a chooser with a **Bug Report** form (and forms for feature requests and
+documentation problems); blank issues are disabled so every report captures the
+information needed to act on it. The bug form asks for:
+
+- Version (`socat-manager --version`)
+- Python version (`python3 --version`)
+- Operating system and version
+- socat version (`socat -V | head -2`)
+- Exact commands run and steps to reproduce
+- Expected vs actual behavior, with full error output
+- Relevant log output (re-run with `--log-level DEBUG` for detail; redact anything sensitive)
+
+Search [existing issues](https://github.com/Sandler73/Socat-Network-Operations-Manager/issues)
+first to avoid duplicates. Usage questions belong in
+[Discussions](https://github.com/Sandler73/Socat-Network-Operations-Manager/discussions)
+rather than the issue tracker.
+
+## Submitting Pull Requests
+
+Pull requests open against a template that captures the change type, testing
+evidence, documentation updates, and the security and quality gates this project
+holds to. Complete every applicable section: for a bug fix, include a regression
+test that fails without the change; update the affected documentation as present-
+tense fact; and add a changelog entry to both changelog files without editing the
+existing historical entries.
 
 ---
 
