@@ -1,5 +1,7 @@
 MIT License
 
+SPDX-License-Identifier: MIT
+
 Copyright (c) 2026 Socat Network Operations Manager Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -125,3 +127,19 @@ this license or applicable laws.
 This license shall be governed by and construed in accordance with the laws
 of the jurisdiction in which the primary maintainer resides, without regard
 to conflict of laws principles.
+
+
+--- License Notice and Attribution ---
+
+The canonical machine-readable identifier for this license is the SPDX
+expression MIT, declared as "SPDX-License-Identifier: MIT" near the top of this
+file. Source files that carry a header may include the same SPDX identifier to
+make per-file licensing unambiguous to automated tooling.
+
+Copyright is held collectively by the "Socat Network Operations Manager
+Contributors." Individual contributions remain the copyright of their authors
+and are licensed to the project and its users under the terms above. The
+project maintainer is identified as "Sandler73." Contributors should not add
+personal names as authorship notations in source, metadata, or documentation;
+use "Sandler73" or "Socat Network Operations Manager Contributors" instead so
+attribution stays consistent across the codebase.
