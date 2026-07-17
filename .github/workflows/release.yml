@@ -1,0 +1,57 @@
+# ==============================================================================
+# FILE        : .github/workflows/release.yml
+# ==============================================================================
+# Synopsis    : Release workflow for Socat Network Operations Manager (Python)
+# Description : On a pushed version tag (v*), builds the source distribution and
+#               wheel with the standard build frontend and publishes a GitHub
+#               release with the built artifacts attached.
+# Notes       : - Triggers: push of a tag matching v* (for example v1.0.1).
+#               - Declares least-privilege permissions (contents: write) — the
+#                 minimum needed to create a release and upload assets.
+# Version     : 1.0.1
+# ==============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Creating a release and uploading assets requires write access to repository
+# contents; nothing else is needed.
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip3 install --break-system-packages build
+
+      - name: Build distributions
+        run: |
+          cd socat-manager-python
+          python3 -m build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            socat-manager-python/dist/*.tar.gz
+            socat-manager-python/dist/*.whl
+          generate_release_notes: true

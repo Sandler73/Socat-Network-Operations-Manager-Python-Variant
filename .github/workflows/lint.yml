@@ -1,0 +1,65 @@
+# ==============================================================================
+# FILE        : .github/workflows/lint.yml
+# ==============================================================================
+# Synopsis    : Static quality gate for Socat Network Operations Manager (Python)
+# Description : Runs the ruff linter, a ruff-based security scan (flake8-bandit
+#               S-rules), and a best-effort mypy type check on a single fast
+#               runner. Mirrors the `lint`, `security`, and `type-check`
+#               Makefile targets so local and CI results agree.
+# Notes       : - Triggers: push to main/develop and pull requests to main.
+#               - S603/S607 are excluded by design (argument-list subprocess
+#                 calls that resolve tools via PATH); all other S-rules apply.
+#               - The mypy step is advisory (continue-on-error).
+# Version     : 1.0.1
+# ==============================================================================
+
+name: Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, security, and types
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: pip3 install --break-system-packages ruff mypy
+
+      - name: Ruff lint
+        run: |
+          cd socat-manager-python
+          ruff check src/ tests/ --select E,W,F,I --ignore E501
+
+      - name: Security scan (ruff flake8-bandit)
+        # S603/S607 are excluded by design: this tool orchestrates socat, ss,
+        # and openssl through subprocess with argument lists (never shell=True)
+        # and resolves them via PATH. All other S-rules remain active.
+        run: |
+          cd socat-manager-python
+          ruff check src/ --select S --ignore S603,S607
+
+      - name: Type check (non-blocking)
+        continue-on-error: true
+        run: |
+          cd socat-manager-python
+          PYTHONPATH=src mypy src/socat_manager

@@ -1,0 +1,54 @@
+# ==============================================================================
+# FILE        : .github/workflows/codeql.yml
+# ==============================================================================
+# Synopsis    : CodeQL static analysis for Socat Network Operations Manager
+# Description : Runs GitHub's CodeQL security and quality analysis over the
+#               Python source on pushes, pull requests, and a weekly schedule.
+#               Findings surface in the repository's Security tab.
+# Notes       : - Triggers: push to main/develop, pull requests to main, and a
+#                 weekly schedule (Monday 07:00 UTC).
+#               - Uses the security-and-quality query suite.
+# Version     : 1.0.1
+# ==============================================================================
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, Monday 07:00 UTC — catches advisories added since the last push.
+    - cron: "0 7 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (python)
+    runs-on: ubuntu-24.04
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-and-quality
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"

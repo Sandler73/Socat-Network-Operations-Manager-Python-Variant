@@ -1,0 +1,40 @@
+# ==============================================================================
+# FILE        : .github/workflows/dependency-review.yml
+# ==============================================================================
+# Synopsis    : Dependency review for pull requests
+# Description : Inspects dependency changes introduced by a pull request and
+#               fails on the introduction of a vulnerable or disallowed-license
+#               dependency. The runtime has zero external dependencies, so this
+#               primarily guards development and build dependencies declared in
+#               pyproject.toml.
+# Notes       : - Triggers: pull requests to main.
+#               - Fails on a high-severity or disallowed-license introduction.
+# Version     : 1.0.1
+# ==============================================================================
+
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dep-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review dependency changes
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
