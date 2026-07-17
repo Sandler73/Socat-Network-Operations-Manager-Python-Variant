@@ -1,0 +1,68 @@
+# ==============================================================================
+# FILE        : .github/ISSUE_TEMPLATE/documentation.yml
+# ==============================================================================
+# Synopsis    : Structured documentation-issue form for the issue tracker
+# Description : A GitHub issue form for reporting inaccurate, missing, or
+#               confusing documentation across the README, the guides under
+#               docs/, and the wiki pages: the document and location, the type
+#               of problem, a description, and an optional suggested correction.
+# Notes       : Rendered by GitHub's issue-forms engine.
+# Version     : 1.0.1
+# ==============================================================================
+name: Documentation Issue
+description: Report an error, gap, or ambiguity in the documentation.
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for inaccurate, missing, or confusing documentation — including
+        the README, the guides under `docs/`, and the wiki pages.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Document and location
+      description: File and section or heading (and page for the wiki).
+      placeholder: docs/USAGE_GUIDE.md — "3.7 stop"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of problem
+      options:
+        - Incorrect or outdated information
+        - Missing information
+        - Confusing or ambiguous wording
+        - Broken link or reference
+        - Example does not work
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong
+      description: Quote the current text if relevant and explain the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested correction
+      description: Proposed wording or the information that should be present.
+    validations:
+      required: false

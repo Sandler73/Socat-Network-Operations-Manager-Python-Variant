@@ -1,0 +1,140 @@
+# ==============================================================================
+# FILE        : .github/ISSUE_TEMPLATE/bug_report.yml
+# ==============================================================================
+# Synopsis    : Structured bug-report form for the issue tracker
+# Description : A GitHub issue form that collects a reproducible defect report:
+#               preflight acknowledgements, a summary, exact reproduction steps,
+#               expected versus actual behavior, the affected mode/component,
+#               the version, the environment, and relevant (redacted) logs.
+# Notes       : Rendered by GitHub's issue-forms engine. Security issues are
+#               routed away by config.yml; they must not be filed here.
+# Version     : 1.0.1
+# ==============================================================================
+name: Bug Report
+description: Report a reproducible defect in the Socat Network Operations Manager.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. A minimal, reproducible
+        example is the single most useful thing you can provide.
+
+        Do not report security vulnerabilities here — use a private security
+        advisory instead (see the security link on the issue chooser).
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is a defect, not a usage question (questions go to Discussions).
+          required: true
+        - label: This report contains no secrets, credentials, or sensitive endpoints.
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear, concise description of the defect.
+      placeholder: Stopping an in-process session reports "may not be fully stopped" although the process is dead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands and actions, in order, that trigger the behavior.
+      placeholder: |
+        1. socat-manager listen --port 8080
+        2. socat-manager stop <sid>
+        3. Observe the warning and non-zero result.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead. Include exact error text.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Affected mode or component
+      multiple: true
+      options:
+        - listen
+        - batch
+        - forward
+        - tunnel
+        - redirect
+        - status
+        - stop
+        - audit
+        - watchdog
+        - source filtering (--allow / --tcpwrap)
+        - interactive menu
+        - session management
+        - certificates
+        - logging
+        - other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `socat-manager --version`.
+      placeholder: socat-manager v1.0.1
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and version, Python version (`python3 --version`), and `socat -V` first line.
+      placeholder: |
+        OS: Ubuntu 24.04
+        Python: 3.12.3
+        socat: socat version 1.8.0.0
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: >-
+        Paste relevant lines from the master log (`logs/socat-manager-<timestamp>.log`)
+        or session logs. Re-run with `--log-level DEBUG` for full detail. Redact
+        any sensitive hosts, ports, or paths first.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that helps — a suspected cause, a workaround, related issues.
+    validations:
+      required: false

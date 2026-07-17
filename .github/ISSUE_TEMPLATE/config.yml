@@ -1,0 +1,26 @@
+# ==============================================================================
+# FILE        : .github/ISSUE_TEMPLATE/config.yml
+# ==============================================================================
+# Synopsis    : Issue template chooser configuration
+# Description : Disables blank issues so every report arrives through a
+#               structured form, and routes security reports and usage
+#               questions away from the public bug/feature trackers via contact
+#               links. See the individual form files in this directory.
+# Notes       : GitHub reads this file to build the "New issue" chooser. The
+#               contact links are not forms; they redirect to the security
+#               advisory flow and to Discussions.
+# Version     : 1.0.1
+# ==============================================================================
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability (private disclosure)
+    url: https://github.com/Sandler73/Socat-Network-Operations-Manager/security/advisories/new
+    about: >-
+      Do not open a public issue for a security vulnerability. Report it
+      privately through a GitHub security advisory. See SECURITY.md for the
+      full policy, scope, and expected response times.
+  - name: Question or usage help
+    url: https://github.com/Sandler73/Socat-Network-Operations-Manager/discussions
+    about: >-
+      For how-to questions, configuration help, and general discussion, please
+      open a discussion rather than an issue.

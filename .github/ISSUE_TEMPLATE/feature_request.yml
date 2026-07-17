@@ -1,0 +1,93 @@
+# ==============================================================================
+# FILE        : .github/ISSUE_TEMPLATE/feature_request.yml
+# ==============================================================================
+# Synopsis    : Structured feature-request form for the issue tracker
+# Description : A GitHub issue form for proposing a capability or enhancement:
+#               preflight acknowledgements (including the zero-dependency
+#               constraint), the problem/motivation, a proposed solution,
+#               alternatives, the affected area, and backward-compatibility
+#               impact.
+# Notes       : Rendered by GitHub's issue-forms engine.
+# Version     : 1.0.1
+# ==============================================================================
+name: Feature Request
+description: Propose a new capability, enhancement, or expansion.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposals that describe the underlying problem, not just a preferred
+        solution, are the easiest to evaluate and the most likely to land.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This proposal keeps the zero-external-runtime-dependency constraint (Python standard library only).
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What are you trying to accomplish, and where does the current tool fall short?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: The capability you have in mind. Sketch the CLI surface, config, or behavior if you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches, existing workarounds, or reasons the OS layer is or is not a better home for this.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - new operational mode
+        - existing mode enhancement
+        - session or state management
+        - security or filtering
+        - logging or auditing
+        - certificates or TLS
+        - packaging, CI, or tooling
+        - documentation
+        - other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Backward compatibility
+      options:
+        - Fully backward compatible
+        - Additive but changes defaults
+        - Potentially breaking
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+    validations:
+      required: false
