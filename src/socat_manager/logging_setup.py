@@ -21,7 +21,7 @@
 #                 (not via the logging module) for isolation
 #               - Capture logs are created by process.py, not here
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Structured logging configuration for socat-manager.
@@ -62,8 +62,21 @@ _dirs_ensured: bool = False
 # Matches bash USE_COLOR logic (lines 199-202).
 USE_COLOR: Final[bool] = hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
 
-# Verbose mode flag — toggled by --verbose / -v flag at CLI parse time
+# Verbose mode flag — toggled by --verbose / -v flag at CLI parse time.
+# Retained as a convenience predicate ("are we at DEBUG?"); the effective level
+# is resolved from the full set of logging controls by resolve_log_level().
 verbose_mode: bool = False
+
+# Ordered, user-selectable console log levels. The file handler always captures
+# from DEBUG; these govern what the console surfaces and are the accepted values
+# of the --log-level option.
+LOG_LEVEL_NAMES: Final[tuple[str, ...]] = (
+    "DEBUG",
+    "INFO",
+    "WARNING",
+    "ERROR",
+    "CRITICAL",
+)
 
 # Cached paths instance
 _paths: RuntimePaths | None = None
@@ -204,6 +217,52 @@ class StructuredFormatter(logging.Formatter):
 # ==============================================================================
 # LOGGER SETUP
 # ==============================================================================
+
+def resolve_log_level(
+    *,
+    log_level: str | None = None,
+    verbose: bool = False,
+    quiet: bool = False,
+) -> int:
+    """Resolve the effective console log level from the CLI logging controls.
+
+    Precedence, highest first:
+        1. ``log_level`` — an explicit level name (authoritative).
+        2. ``verbose`` — maps to DEBUG.
+        3. ``quiet`` — maps to WARNING.
+        4. default — INFO.
+
+    ``verbose`` wins over ``quiet`` when both are supplied: surfacing more
+    diagnostic detail is the safer default than silently suppressing it. An
+    explicit ``log_level`` overrides both shortcuts so a precise level can
+    always be selected regardless of the convenience flags.
+
+    Args:
+        log_level: Optional level name (case-insensitive) — one of
+                   DEBUG, INFO, WARNING, ERROR, CRITICAL.
+        verbose: True when --verbose / -v was supplied.
+        quiet: True when --quiet / -q was supplied.
+
+    Returns:
+        The corresponding ``logging`` level integer.
+
+    Raises:
+        ValueError: If ``log_level`` is a non-empty string that does not name
+                    a standard logging level.
+    """
+    if log_level:
+        name: str = log_level.strip().upper()
+        resolved = getattr(logging, name, None)
+        if not isinstance(resolved, int) or name not in LOG_LEVEL_NAMES:
+            raise ValueError(f"Unknown log level: {log_level!r}")
+        return resolved
+
+    if verbose:
+        return logging.DEBUG
+    if quiet:
+        return logging.WARNING
+    return logging.INFO
+
 
 def setup_logging(*, log_level: int = logging.INFO) -> logging.Logger:
     """Configure and return the application logger with dual output.
