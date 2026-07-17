@@ -38,7 +38,7 @@
 #                 Their exit status is collected when they terminate, so no
 #                 zombie entries accumulate and death is detected truthfully
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Watchdog auto-restart monitor for socat sessions.
@@ -55,7 +55,8 @@ import threading
 import time
 from pathlib import Path
 
-from socat_manager.config import DEFAULTS
+from socat_manager import audit
+from socat_manager.config import CORRELATION_ID, DEFAULTS
 from socat_manager.logging_setup import (
     get_paths,
     log_error,
@@ -140,6 +141,14 @@ def watchdog_loop(
     while restart_count < max_restarts:
         restart_count += 1
 
+        # The monitored process has died (initial death or a prior replacement).
+        audit.record_event(
+            audit.EVENT_CRASH,
+            correlation_id=CORRELATION_ID,
+            session_id=session_id, name=session_name,
+            detail=f"process died; restart attempt {restart_count}/{max_restarts}",
+        )
+
         log_warning(
             f"Process died. Restarting in {backoff}s... "
             f"({restart_count}/{max_restarts})",
@@ -169,6 +178,14 @@ def watchdog_loop(
         # Under setsid the replacement is a session leader, so PGID == PID.
         session_update_process(session_id, pid=pid, pgid=pid)
 
+        audit.record_event(
+            audit.EVENT_RESTART,
+            correlation_id=CORRELATION_ID,
+            session_id=session_id, name=session_name, pid=pid, pgid=pid,
+            detail=f"restart {restart_count}/{max_restarts}",
+        )
+        audit.record_restart(session_id)
+
         # Monitor the replacement process (blocking wait)
         _wait_for_pid_death(pid, session_id, paths)
 
@@ -187,6 +204,7 @@ def watchdog_loop(
             f"'{session_name}' [{session_id}]",
             "watchdog",
         )
+        audit.record_session_end(session_id, "watchdog_exhausted")
 
     # Cleanup: unregister session
     session_unregister(session_id)
@@ -227,6 +245,11 @@ def _wait_for_pid_death(pid: int, session_id: str, paths: object) -> None:
         # Check if stop was requested
         stop_file: Path = getattr(paths, "session_dir") / f"{session_id}.stop"
         if stop_file.exists():
+            # A deliberate stop is collecting the process on the stop path.
+            # Collect here too in case the process has already exited when the
+            # signal is observed; reap_child() is idempotent and a no-op while
+            # the process is still running.
+            reap_child(pid)
             return
 
         time.sleep(DEFAULTS.watchdog_poll_interval)
