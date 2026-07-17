@@ -18,7 +18,7 @@
 #                 detection (see logging_setup.py)
 #               - All DEFAULT_* values match bash v2.3.0 exactly
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Configuration constants and defaults for socat-manager.
@@ -43,7 +43,7 @@ from typing import Final
 # ==============================================================================
 
 SCRIPT_NAME: Final[str] = "socat-manager"
-SCRIPT_VERSION: Final[str] = "0.9.0"
+SCRIPT_VERSION: Final[str] = "1.0.1"
 
 
 # ==============================================================================
@@ -117,6 +117,16 @@ class RuntimePaths:
     def cert_dir(self) -> Path:
         """Directory for TLS certificates and private keys."""
         return self.base_dir / "certs"
+
+    @property
+    def audit_dir(self) -> Path:
+        """Directory for the persistent audit store (permissions 0o700)."""
+        return self.base_dir / "audit"
+
+    @property
+    def audit_db(self) -> Path:
+        """Default path to the SQLite audit database (permissions 0o600)."""
+        return self.audit_dir / "socat-manager-audit.db"
 
     @property
     def session_lock_file(self) -> Path:
