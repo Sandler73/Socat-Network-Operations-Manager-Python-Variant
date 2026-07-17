@@ -14,7 +14,7 @@
 #               - Does NOT have --logfile, --socat-opts, or --bind flags
 #               - Session name auto-generated as fwd-{lport}-{rhost}-{rport}
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Forward mode handler — bidirectional port forwarding."""
@@ -25,7 +25,11 @@ import os
 import sys
 from typing import Any
 
-from socat_manager.commands import build_socat_forward_cmd, cmd_list_to_string
+from socat_manager.commands import (
+    build_filter_opts,
+    build_socat_forward_cmd,
+    cmd_list_to_string,
+)
 from socat_manager.config import ALT_PROTOCOL, DEFAULTS, EXEC_TIMESTAMP, SYMBOLS
 from socat_manager.logging_setup import (
     _ensure_dirs,
@@ -97,6 +101,19 @@ def mode_forward(args: Any) -> None:
     wd_backoff: int = getattr(args, 'backoff', None) or 1
     dual_stack: bool = bool(args.dual_stack)
 
+    # Source-filter options (range=, tcpwrap=), family-checked against the
+    # local listen protocol.
+    filter_opts: str = ""
+    try:
+        filter_opts = build_filter_opts(
+            allow=getattr(args, "allow", "") or "",
+            tcpwrap=getattr(args, "tcpwrap", "") or "",
+            proto=proto,
+        )
+    except ValidationError as exc:
+        log_error(str(exc), "forward")
+        sys.exit(1)
+
     # --- Check port availability ---
     if not check_port_available(lport, proto):
         log_error(f"Local port {lport} ({proto}) is already in use", "forward")
@@ -116,7 +133,7 @@ def mode_forward(args: Any) -> None:
 
     # --- Build command ---
     cmd: list[str] = build_socat_forward_cmd(
-        proto, lport, rhost, rport, remote_proto, capture,
+        proto, lport, rhost, rport, remote_proto, capture, filter_opts,
     )
 
     # --- Display configuration ---
@@ -175,7 +192,7 @@ def mode_forward(args: Any) -> None:
         if alt_proto and alt_remote_proto:
             alt_name: str = f"fwd-{alt_proto}-{lport}-{rhost}-{rport}"
             alt_cmd: list[str] = build_socat_forward_cmd(
-                alt_proto, lport, rhost, rport, alt_remote_proto, capture,
+                alt_proto, lport, rhost, rport, alt_remote_proto, capture, filter_opts,
             )
 
             alt_capture_logfile: str = ""
