@@ -23,7 +23,7 @@
 #               - UDP options include reuseaddr and fork only
 #               - Capture mode adds -v flag for hex dump on stderr
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Socat command string builders for all operational modes.
@@ -38,7 +38,64 @@ from socat_manager.config import (
     DEFAULTS,
     SOCAT_CONNECT_ADDR,
     SOCAT_LISTEN_ADDR,
+    protocol_family,
 )
+from socat_manager.validation import (
+    ValidationError,
+    validate_source_range,
+    validate_tcpwrap_name,
+)
+
+# ==============================================================================
+# HELPER: listener source-filter options
+# ==============================================================================
+
+def build_filter_opts(allow: str = "", tcpwrap: str = "", proto: str = "") -> str:
+    """Assemble validated socat listener-side source-filter options.
+
+    Converts a source range and a TCP-wrappers daemon name into the socat
+    address options ``range=<network>`` and ``tcpwrap=<name>``. Both restrict
+    which peers a listener will accept: ``range`` matches the source address
+    against a network at the socket layer, and ``tcpwrap`` consults
+    /etc/hosts.allow and /etc/hosts.deny (requires a socat built with libwrap).
+
+    When ``proto`` is given, the address family of the source range is checked
+    against the listener's family so an IPv6 range on an IPv4 listener (or the
+    reverse) is rejected up front rather than failing inside socat.
+
+    Args:
+        allow: Optional source range in CIDR notation.
+        tcpwrap: Optional TCP-wrappers daemon name.
+        proto: Optional normalized listener protocol, for family checking.
+
+    Returns:
+        A comma-joined option fragment (possibly empty) suitable for appending
+        to a socat listener address.
+
+    Raises:
+        ValidationError: If a value is malformed or the range family does not
+                         match the listener protocol.
+    """
+    fragments: list[str] = []
+
+    if allow:
+        range_value: str = validate_source_range(allow)
+        if proto:
+            range_family: str = "6" if range_value.startswith("[") else "4"
+            if protocol_family(proto) != range_family:
+                raise ValidationError(
+                    f"Source range family (IPv{range_family}) does not match "
+                    f"listener protocol '{proto}'.",
+                    field="source_range",
+                    value=allow,
+                )
+        fragments.append(f"range={range_value}")
+
+    if tcpwrap:
+        fragments.append(f"tcpwrap={validate_tcpwrap_name(tcpwrap)}")
+
+    return ",".join(fragments)
+
 
 # ==============================================================================
 # HELPER: socat address formatting
@@ -120,6 +177,7 @@ def build_socat_listen_cmd(
     logfile: str,
     extra_opts: str = "",
     capture: bool = False,
+    filter_opts: str = "",
 ) -> list[str]:
     """Build a socat command for a single-port listener.
 
@@ -133,6 +191,8 @@ def build_socat_listen_cmd(
         logfile: Path to the data capture log file.
         extra_opts: Additional socat address options (pre-validated).
         capture: Whether to enable traffic capture (-v flag).
+        filter_opts: Listener source-filter options (range=, tcpwrap=),
+            as produced by build_filter_opts().
 
     Returns:
         Command argument list for subprocess.Popen.
@@ -154,6 +214,10 @@ def build_socat_listen_cmd(
     # Append user-provided socat address options
     if extra_opts:
         listen_opts += f",{extra_opts}"
+
+    # Append source-filter options (range=, tcpwrap=) — listener-side only
+    if filter_opts:
+        listen_opts += f",{filter_opts}"
 
     # Build command list
     cmd: list[str] = ["socat"]
@@ -186,6 +250,7 @@ def build_socat_forward_cmd(
     rport: int,
     remote_proto: str = "",
     capture: bool = False,
+    filter_opts: str = "",
 ) -> list[str]:
     """Build a socat command for bidirectional port forwarding.
 
@@ -200,6 +265,7 @@ def build_socat_forward_cmd(
         rport: Remote port to forward to.
         remote_proto: Remote protocol (defaults to listen_proto).
         capture: Whether to enable traffic capture (-v flag).
+        filter_opts: Listener source-filter options (range=, tcpwrap=).
 
     Returns:
         Command argument list for subprocess.Popen.
@@ -219,6 +285,10 @@ def build_socat_forward_cmd(
     listen_opts: str = "reuseaddr,fork"
     if listen_proto.startswith("tcp"):
         listen_opts += f",backlog={DEFAULTS.backlog},keepalive"
+
+    # Append source-filter options (range=, tcpwrap=) — listener-side only
+    if filter_opts:
+        listen_opts += f",{filter_opts}"
 
     # Build command list (no -u flag — bidirectional)
     cmd: list[str] = ["socat"]
@@ -250,6 +320,7 @@ def build_socat_tunnel_cmd(
     key: str,
     capture: bool = False,
     remote_proto: str = "tcp4",
+    filter_opts: str = "",
 ) -> list[str]:
     """Build a socat command for an encrypted (OpenSSL) tunnel.
 
@@ -270,6 +341,7 @@ def build_socat_tunnel_cmd(
         key: Path to private key PEM file.
         capture: Whether to enable traffic capture (-v flag).
         remote_proto: Remote address family selector (tcp4 or tcp6).
+        filter_opts: Listener source-filter options (range=, tcpwrap=).
 
     Returns:
         Command argument list for subprocess.Popen.
@@ -290,6 +362,8 @@ def build_socat_tunnel_cmd(
         f"cert={cert},key={key},"
         f"verify=0,reuseaddr,fork"
     )
+    if filter_opts:
+        ssl_opts += f",{filter_opts}"
     cmd.append(ssl_opts)
 
     # Right side: plaintext TCP connection to remote.
@@ -313,6 +387,7 @@ def build_socat_redirect_cmd(
     rhost: str,
     rport: int,
     capture: bool = False,
+    filter_opts: str = "",
 ) -> list[str]:
     """Build a socat command for transparent traffic redirection.
 
@@ -325,6 +400,7 @@ def build_socat_redirect_cmd(
         rhost: Remote host to redirect to.
         rport: Remote port to redirect to.
         capture: Whether to enable traffic capture (-v flag).
+        filter_opts: Listener source-filter options (range=, tcpwrap=).
 
     Returns:
         Command argument list for subprocess.Popen.
@@ -340,6 +416,10 @@ def build_socat_redirect_cmd(
     listen_opts: str = "reuseaddr,fork"
     if proto.startswith("tcp"):
         listen_opts += f",backlog={DEFAULTS.backlog},keepalive"
+
+    # Append source-filter options (range=, tcpwrap=) — listener-side only
+    if filter_opts:
+        listen_opts += f",{filter_opts}"
 
     # Build command list (no -u flag — bidirectional)
     cmd: list[str] = ["socat"]
