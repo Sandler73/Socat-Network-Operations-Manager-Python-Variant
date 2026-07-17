@@ -6,7 +6,7 @@
 #               pytest configuration, ruff linting rules, and mypy type
 #               checking settings. Core package has ZERO external dependencies;
 #               dev dependencies are pytest, ruff, and mypy only.
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 [build-system]
@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socat-manager"
-version = "0.9.0"
+version = "1.0.1"
 description = "Session-managed socat network operations platform — Python variant"
 readme = "README.md"
 license = {text = "MIT"}
