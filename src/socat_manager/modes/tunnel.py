@@ -16,7 +16,7 @@
 #               - Dual-stack adds plaintext UDP forwarder (mode: tunnel-udp)
 #               - --cn validated via validate_session_name() before use
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Tunnel mode handler — TLS-encrypted tunnel via socat+OpenSSL."""
@@ -30,6 +30,7 @@ from typing import Any
 
 from socat_manager.certs import generate_self_signed_cert
 from socat_manager.commands import (
+    build_filter_opts,
     build_socat_forward_cmd,
     build_socat_tunnel_cmd,
     cmd_list_to_string,
@@ -206,13 +207,27 @@ def mode_tunnel(args: Any) -> None:
         )
         _create_capture_log(capture_logfile)
 
+    # Source-filter options (range=, tcpwrap=). The TLS listener's address
+    # family is selected by socat at bind time, so the range is not family-
+    # checked here; a family mismatch surfaces from socat at launch.
+    filter_opts: str = ""
+    try:
+        filter_opts = build_filter_opts(
+            allow=getattr(args, "allow", "") or "",
+            tcpwrap=getattr(args, "tcpwrap", "") or "",
+        )
+    except ValidationError as exc:
+        log_error(str(exc), "tunnel")
+        sys.exit(1)
+
     # --- Build command ---
     # The remote leg's address family follows the target: an IPv6 literal is
     # reached over a TCP6 connector, everything else over TCP4 (which also
     # serves hostnames, since socat resolves them itself).
     remote_proto: str = "tcp6" if is_ipv6_literal(rhost) else "tcp4"
     cmd: list[str] = build_socat_tunnel_cmd(
-        lport, rhost, rport, cert, key, capture, remote_proto=remote_proto,
+        lport, rhost, rport, cert, key, capture,
+        remote_proto=remote_proto, filter_opts=filter_opts,
     )
 
     # --- Display configuration ---
@@ -269,7 +284,7 @@ def mode_tunnel(args: Any) -> None:
         if check_port_available(lport, "udp4"):
             udp_name: str = f"fwd-udp4-{lport}-{rhost}-{rport}"
             udp_cmd: list[str] = build_socat_forward_cmd(
-                "udp4", lport, rhost, rport, "udp4", capture,
+                "udp4", lport, rhost, rport, "udp4", capture, filter_opts,
             )
 
             udp_capture_logfile: str = ""
