@@ -23,7 +23,7 @@
 #               - Session file permissions: 0o600
 #               - Values containing '=' are handled correctly (split on first)
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Session management: registration, lookup, cleanup, and locking.
@@ -255,15 +255,19 @@ def session_register(
 def session_update_process(sid: str, pid: int, pgid: int) -> bool:
     """Update the tracked process identity of an existing session.
 
-    Rewrites the PID, PGID, and STARTED fields of a session file while
-    preserving every other field (name, mode, protocol, ports, socat
-    command, correlation ID, launcher PID) and the file header.
+    Rewrites the PID and PGID fields of a session file while preserving every
+    other field (name, mode, protocol, ports, socat command, correlation ID,
+    launcher PID, and the STARTED creation timestamp) and the file header.
 
     This is the durable record of which process a session currently owns.
     Any component that replaces the process behind a session — such as the
     watchdog after an unexpected exit — must call this so that liveness
     checks and the stop sequence act on the process that is actually
     running rather than a terminated predecessor.
+
+    STARTED records when the session was created and is deliberately left
+    unchanged: a restart changes which process the session owns, not when the
+    session began. Restart events are recorded in the session log.
 
     The rewrite is performed under the advisory session lock and written
     through a temporary file with 0o600 permissions, then atomically
@@ -298,17 +302,11 @@ def session_update_process(sid: str, pid: int, pgid: int) -> bool:
             log_error(f"Cannot read session file for update: {sid} ({exc})", "session")
             return False
 
-        started: str = datetime.now(timezone.utc).astimezone().strftime(
-            "%Y-%m-%dT%H:%M:%S"
-        )
-
-        # Replacement values keyed by field name. Only the process identity
-        # and the start timestamp change; every other line is preserved
-        # exactly as written, including comments.
+        # Only the process identity changes. STARTED is preserved so the
+        # recorded creation time is not lost across a restart.
         replacements: dict[str, str] = {
             SESSION_FIELDS.pid: str(pid),
             SESSION_FIELDS.pgid: str(pgid),
-            SESSION_FIELDS.started: started,
         }
 
         updated_lines: list[str] = []
