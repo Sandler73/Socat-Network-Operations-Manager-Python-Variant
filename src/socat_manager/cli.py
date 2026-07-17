@@ -9,9 +9,11 @@
 # Notes       : - Every flag matches the bash --flag name exactly
 #               - Positional arguments for status/stop match bash behavior
 #               - Global --verbose/-v and --help/-h on all subcommands
+#               - Global --log-level and --quiet/-q on all operational subcommands
+#               - --allow (source range) and --tcpwrap on the listener modes
 #               - 'menu' subcommand launches interactive mode
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """CLI argument parser for socat-manager.
@@ -26,6 +28,7 @@ import argparse
 
 from socat_manager import __version__
 from socat_manager.config import SCRIPT_NAME
+from socat_manager.logging_setup import LOG_LEVEL_NAMES
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -38,14 +41,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=SCRIPT_NAME,
         description=(
-            "Socat Network Operations Manager — session-managed socat "
-            "network operations across seven modes."
+            "Socat Network Operations Manager — session-managed socat network "
+            "operations across seven operational modes (listen, batch, forward, "
+            "tunnel, redirect, status, stop), plus an audit-history query and an "
+            "interactive menu."
         ),
         epilog=(
             "examples:\n"
             "  %(prog)s listen --port 8080\n"
             "  %(prog)s listen --port 5353 --proto udp4\n"
             "  %(prog)s listen --port 8080 --dual-stack\n"
+            "  %(prog)s listen --port 8080 --allow 10.0.0.0/8 --tcpwrap\n"
             "  %(prog)s batch --ports 21,22,80,443\n"
             "  %(prog)s batch --range 8000-8010 --dual-stack\n"
             "  %(prog)s forward --lport 8080 --rhost 10.0.0.5 --rport 80\n"
@@ -54,6 +60,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  %(prog)s status\n"
             "  %(prog)s status abcd1234\n"
             "  %(prog)s stop --all\n"
+            "  %(prog)s audit --history\n"
+            "  %(prog)s audit --type crash --since 2026-01-01\n"
             "\n"
             "session management:\n"
             "  Each socat process gets a unique 8-character hex Session ID.\n"
@@ -67,15 +75,29 @@ def build_parser() -> argparse.ArgumentParser:
             "                       Each protocol gets its own session ID.\n"
             "                       Stop operations are protocol-aware.\n"
             "\n"
+            "source filtering (listen, batch, forward, tunnel, redirect):\n"
+            "  --allow <CIDR>       Accept connections only from an IPv4/IPv6\n"
+            "                       source range (socat range=).\n"
+            "  --tcpwrap [NAME]     Enforce /etc/hosts.allow and /etc/hosts.deny\n"
+            "                       (socat tcpwrap=, default daemon name 'socat').\n"
+            "\n"
             "reliability:\n"
             "  --watchdog enables auto-restart with exponential backoff.\n"
             "  Max 10 restarts before giving up. Backoff: 1s, 2s, 4s... 60s cap.\n"
             "\n"
             "logging:\n"
+            "  --log-level <LEVEL>  DEBUG, INFO, WARNING, ERROR, CRITICAL (default INFO).\n"
+            "  --verbose / -q       Shortcuts for DEBUG / WARNING console output.\n"
             "  Master log:     logs/socat-manager-<timestamp>.log\n"
             "  Session logs:   logs/session-<sid>.log\n"
             "  Session errors: logs/session-<sid>-error.log\n"
             "  Capture logs:   logs/capture-<proto>-<port>-<timestamp>.log\n"
+            "\n"
+            "auditing:\n"
+            "  Session launches, stops, restarts, and crashes are recorded to a\n"
+            "  SQLite store under audit/ (on by default). Disable per run with\n"
+            "  --no-audit or globally with SOCAT_MANAGER_AUDIT=0. Review history\n"
+            "  with '%(prog)s audit'.\n"
             "\n"
             "Run '%(prog)s <mode> --help' for mode-specific options.\n"
             "Run '%(prog)s' with no arguments for interactive menu."
@@ -313,13 +335,43 @@ def build_parser() -> argparse.ArgumentParser:
     p_stop.add_argument("--pid", default=None, help="Stop by PID")
     p_stop.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
 
+    # === AUDIT ===
+    p_audit = subparsers.add_parser(
+        "audit",
+        help="Query the persistent audit history",
+        description=(
+            "Query the persistent audit store (read-only). Shows recorded\n"
+            "events — launches, stops, restarts, crashes — or the per-session\n"
+            "lifecycle summary. Never modifies live sessions."
+        ),
+        epilog=(
+            "examples:\n"
+            "  %(prog)s\n"
+            "  %(prog)s --session a1b2c3d4\n"
+            "  %(prog)s --type crash --limit 20\n"
+            "  %(prog)s --since 2026-07-01 --json\n"
+            "  %(prog)s --history\n"
+            "  %(prog)s --prune"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    p_audit.add_argument("--session", default=None, help="Filter to one session ID")
+    p_audit.add_argument(
+        "--type", default=None, dest="event_type",
+        help="Filter by event type (launch, stop, restart, crash, ...)",
+    )
+    p_audit.add_argument("--since", default=None, help="Only events at/after this ISO date/time")
+    p_audit.add_argument("--limit", type=int, default=50, help="Maximum rows (0 = no limit)")
+    p_audit.add_argument("--history", action="store_true", help="Show session lifecycle summaries")
+    p_audit.add_argument("--json", action="store_true", dest="as_json", help="Output as JSON")
+    p_audit.add_argument("--prune", action="store_true", help="Apply the configured retention now")
+
     # === MENU ===
     subparsers.add_parser(
         "menu",
         help="Launch interactive menu",
         description="Launch the interactive menu-driven interface.",
     )
-
     # === HELP (positional alias for --help) ===
     subparsers.add_parser(
         "help",
@@ -333,5 +385,65 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show version number",
         description="Display the version number and exit.",
     )
+
+    # --- Global logging controls ---
+    # Added uniformly to every operational subcommand so the option set lives in
+    # one place. The short verbosity toggle -v is intentionally not reused here:
+    # `status -v` already means "show system listener info", so only the
+    # collision-free long options --log-level and --quiet (-q) are added. These
+    # sit alongside the existing per-command --verbose, which remains a shortcut
+    # for --log-level DEBUG. help and version take no options.
+    for _sub_name, _sub_parser in subparsers.choices.items():
+        if _sub_name in ("help", "version"):
+            continue
+        _sub_parser.add_argument(
+            "--log-level",
+            type=str.upper,
+            choices=LOG_LEVEL_NAMES,
+            default=None,
+            metavar="LEVEL",
+            help=(
+                "Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL "
+                "(default: INFO). Overrides --verbose and --quiet."
+            ),
+        )
+        _sub_parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="Suppress informational output (alias for --log-level WARNING)",
+        )
+        _sub_parser.add_argument(
+            "--no-audit",
+            action="store_true",
+            help="Disable audit recording for this invocation (auditing is on by default)",
+        )
+
+    # --- Source-filter controls on the modes that accept inbound connections ---
+    # These restrict which peers a listener will accept, via socat's address
+    # options range= (source subnet) and tcpwrap= (/etc/hosts.allow|deny).
+    for _flt_name in ("listen", "batch", "forward", "tunnel", "redirect"):
+        _flt_parser = subparsers.choices[_flt_name]
+        _flt_parser.add_argument(
+            "--allow",
+            default=None,
+            metavar="CIDR",
+            help=(
+                "Accept connections only from this source range "
+                "(IPv4 or IPv6 CIDR, e.g. 10.0.0.0/8). Maps to socat range=."
+            ),
+        )
+        _flt_parser.add_argument(
+            "--tcpwrap",
+            nargs="?",
+            const="socat",
+            default=None,
+            metavar="NAME",
+            help=(
+                "Enforce access via TCP wrappers (/etc/hosts.allow and "
+                "/etc/hosts.deny) using the given daemon name (default: socat). "
+                "Requires a socat built with libwrap."
+            ),
+        )
 
     return parser
