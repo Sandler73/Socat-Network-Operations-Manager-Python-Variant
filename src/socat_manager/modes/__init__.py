@@ -10,7 +10,7 @@
 # Notes       : - Mode handlers are imported lazily in dispatch_mode()
 #               - Each handler accepts an argparse Namespace
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Operational mode handlers for socat-manager."""
