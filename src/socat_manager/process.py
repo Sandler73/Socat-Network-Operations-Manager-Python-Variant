@@ -30,7 +30,7 @@
 #                 same port number are independent sockets
 #               - kill_by_port() only targets socat processes
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Process launch, stop, and port management for socat-manager.
@@ -50,8 +50,10 @@ import threading
 import time
 from pathlib import Path
 
+from socat_manager import audit
 from socat_manager.commands import cmd_list_to_string
 from socat_manager.config import (
+    CORRELATION_ID,
     DEFAULTS,
     SESSION_FIELDS,
     RuntimePaths,
@@ -231,6 +233,26 @@ def launch_socat_session(
     )
 
     log_session(sid, "INFO", f"Session active: PID={socat_pid} PGID={pgid}")
+
+    # Audit (no-op when disabled; never raises).
+    audit.record_event(
+        audit.EVENT_LAUNCH,
+        correlation_id=CORRELATION_ID,
+        session_id=sid,
+        name=name,
+        mode=mode,
+        proto=proto,
+        lport=lport,
+        rhost=rhost,
+        rport=int(rport) if str(rport).isdigit() else None,
+        pid=socat_pid,
+        pgid=pgid,
+        detail=cmd_list_to_string(cmd),
+    )
+    audit.record_session_start(
+        sid, name, mode, proto, lport, rhost,
+        int(rport) if str(rport).isdigit() else 0,
+    )
 
     return sid, socat_pid
 
@@ -704,11 +726,12 @@ def stop_session(sid: str) -> bool:
         pgid_alive: bool = False
 
         if pid > 0:
-            try:
-                os.kill(pid, 0)
-                pid_alive = True
-            except OSError:
-                pass
+            # process_is_running() is zombie-aware: for a child of this process
+            # it polls the retained handle, which both reports termination
+            # truthfully and collects the exit status. Collecting the status
+            # removes the process table entry, so the process-group check below
+            # is no longer answered by a lingering zombie.
+            pid_alive = process_is_running(pid)
 
         if pgid > 0:
             try:
@@ -754,13 +777,23 @@ def stop_session(sid: str) -> bool:
         time.sleep(DEFAULTS.stop_verify_interval)
 
     # --- Step 6b: Verify PID is truly dead ---
+    # Use the zombie-aware liveness check rather than a bare signal-0 probe. A
+    # child this process killed remains in the process table as a zombie until
+    # its exit status is collected, and a zombie answers signal 0 — so signal 0
+    # alone would misread a dead child as alive and report the stop as
+    # incomplete. process_is_running() consults the retained handle and
+    # collects the child when it observes termination.
     final_check: bool = True
     if pid > 0:
-        try:
-            os.kill(pid, 0)
-            final_check = False  # Still alive
-        except OSError:
-            final_check = True  # Dead
+        final_check = not process_is_running(pid)
+
+    # Collect the child unconditionally in case it terminated on a path that
+    # did not already poll its handle (for example, death during the SIGKILL
+    # settle). reap_child() is idempotent and a no-op for a process that is not
+    # a child of this instance or is still running, so it cannot disturb a
+    # live process or a session adopted from a previous invocation.
+    if pid > 0:
+        reap_child(pid)
 
     # --- Step 7: Fallback — kill by port if still in use (protocol-scoped) ---
     if lport > 0:
@@ -787,6 +820,13 @@ def stop_session(sid: str) -> bool:
     if final_check:
         log_success(f"Stopped: {sid} ({name}, {proto})", "stop")
         log_session(sid, "INFO", "Session stopped successfully")
+        audit.record_event(
+            audit.EVENT_STOP,
+            correlation_id=CORRELATION_ID,
+            session_id=sid, name=name, proto=proto, lport=lport,
+            pid=pid, pgid=pgid,
+        )
+        audit.record_session_end(sid, "stopped")
     else:
         log_warning(
             f"Session {sid} ({name}) may not be fully stopped — "
@@ -794,5 +834,13 @@ def stop_session(sid: str) -> bool:
             "stop",
         )
         log_session(sid, "WARNING", "Session stop may be incomplete")
+        audit.record_event(
+            audit.EVENT_STOP_FAILED,
+            correlation_id=CORRELATION_ID,
+            session_id=sid, name=name, proto=proto, lport=lport,
+            pid=pid, pgid=pgid,
+            detail="stop verification did not confirm process death",
+        )
+        audit.record_session_end(sid, "stop_failed")
 
     return final_check
