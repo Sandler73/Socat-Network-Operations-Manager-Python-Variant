@@ -26,7 +26,7 @@
 #                 consumption
 #               - Shell metacharacter rejection matches bash patterns exactly
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Input validation for all user-supplied parameters.
@@ -38,6 +38,7 @@ session files, or subprocess calls.
 
 from __future__ import annotations
 
+import ipaddress
 import os
 import re
 from typing import Final
@@ -139,6 +140,9 @@ _HOSTNAME_FORBIDDEN_PATTERN: Final[re.Pattern[str]] = re.compile(
 _FILEPATH_FORBIDDEN_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"[" + re.escape(FILEPATH_FORBIDDEN_CHARS) + r"]"
 )
+
+# TCP-wrappers daemon name: a short token safe to embed in a socat option.
+_TCPWRAP_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 
 
 # ==============================================================================
@@ -558,6 +562,79 @@ def validate_socat_opts(opts: str) -> str:
         raise ValidationError(msg, field="socat_opts", value=opts)
 
     return opts
+
+
+# ==============================================================================
+# VALIDATOR 7b: validate_source_range
+# ==============================================================================
+
+def validate_source_range(cidr: str) -> str:
+    """Validate a source address range and render it for socat's range= option.
+
+    Accepts an IPv4 or IPv6 network in CIDR notation and returns the value in
+    the form socat expects for the address-level ``range`` option: a bare
+    ``network/prefix`` for IPv4 and a bracketed ``[network]/prefix`` for IPv6.
+    Host bits are permitted on input and masked off, so ``10.1.2.3/8`` and
+    ``10.0.0.0/8`` both yield ``10.0.0.0/8``.
+
+    Args:
+        cidr: Source range in CIDR notation (for example ``10.0.0.0/8`` or
+              ``2001:db8::/32``).
+
+    Returns:
+        The range value ready to append as ``range=<value>``.
+
+    Raises:
+        ValidationError: If the value is not a valid IPv4 or IPv6 network.
+    """
+    cidr = cidr.strip()
+
+    try:
+        network = ipaddress.ip_network(cidr, strict=False)
+    except ValueError as exc:
+        msg: str = (
+            f"Invalid source range '{cidr}'. Expected IPv4 or IPv6 CIDR "
+            "notation, for example 10.0.0.0/8 or 2001:db8::/32."
+        )
+        log_error(msg, "validation")
+        raise ValidationError(msg, field="source_range", value=cidr) from exc
+
+    if network.version == 6:
+        return f"[{network.network_address}]/{network.prefixlen}"
+    return f"{network.network_address}/{network.prefixlen}"
+
+
+# ==============================================================================
+# VALIDATOR 7c: validate_tcpwrap_name
+# ==============================================================================
+
+def validate_tcpwrap_name(name: str) -> str:
+    """Validate a TCP-wrappers daemon name for socat's tcpwrap= option.
+
+    The name is looked up in /etc/hosts.allow and /etc/hosts.deny. It is
+    restricted to a short token of alphanumerics and the ``. _ -`` characters
+    so it cannot inject additional socat options or shell metacharacters.
+
+    Args:
+        name: Daemon name to use with TCP wrappers.
+
+    Returns:
+        The validated name (unchanged).
+
+    Raises:
+        ValidationError: If the name is empty or contains disallowed characters.
+    """
+    name = name.strip()
+
+    if not _TCPWRAP_NAME_PATTERN.match(name):
+        msg: str = (
+            f"Invalid tcpwrap daemon name '{name}'. Allowed: 1-64 characters "
+            "of alphanumerics and . _ -"
+        )
+        log_error(msg, "validation")
+        raise ValidationError(msg, field="tcpwrap", value=name)
+
+    return name
 
 
 # ==============================================================================
