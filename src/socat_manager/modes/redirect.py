@@ -12,7 +12,7 @@
 #               - Session name auto-generated as redir-{proto}-{lport}-{rhost}-{rport}
 #               - Does NOT have --logfile, --socat-opts, or --bind flags
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Redirect mode handler — transparent port redirection."""
@@ -23,7 +23,11 @@ import os
 import sys
 from typing import Any
 
-from socat_manager.commands import build_socat_redirect_cmd, cmd_list_to_string
+from socat_manager.commands import (
+    build_filter_opts,
+    build_socat_redirect_cmd,
+    cmd_list_to_string,
+)
 from socat_manager.config import ALT_PROTOCOL, DEFAULTS, EXEC_TIMESTAMP, SYMBOLS
 from socat_manager.logging_setup import (
     _ensure_dirs,
@@ -86,6 +90,18 @@ def mode_redirect(args: Any) -> None:
     wd_backoff: int = getattr(args, 'backoff', None) or 1
     dual_stack: bool = bool(args.dual_stack)
 
+    # Source-filter options (range=, tcpwrap=), family-checked against proto.
+    filter_opts: str = ""
+    try:
+        filter_opts = build_filter_opts(
+            allow=getattr(args, "allow", "") or "",
+            tcpwrap=getattr(args, "tcpwrap", "") or "",
+            proto=proto,
+        )
+    except ValidationError as exc:
+        log_error(str(exc), "redirect")
+        sys.exit(1)
+
     print_banner("Redirector")
 
     # --- Check port availability ---
@@ -106,7 +122,7 @@ def mode_redirect(args: Any) -> None:
         _create_capture_log(capture_logfile)
 
     # --- Build command ---
-    cmd: list[str] = build_socat_redirect_cmd(proto, lport, rhost, rport, capture)
+    cmd: list[str] = build_socat_redirect_cmd(proto, lport, rhost, rport, capture, filter_opts)
 
     # --- Display configuration ---
     print_section("Redirect Configuration")
@@ -163,7 +179,7 @@ def mode_redirect(args: Any) -> None:
         if alt_proto and check_port_available(lport, alt_proto):
             alt_name: str = f"redir-{alt_proto}-{lport}-{rhost}-{rport}"
             alt_cmd: list[str] = build_socat_redirect_cmd(
-                alt_proto, lport, rhost, rport, capture,
+                alt_proto, lport, rhost, rport, capture, filter_opts,
             )
 
             alt_capture_logfile: str = ""
