@@ -16,7 +16,7 @@
 #               - Default CN: localhost
 #               - No external Python dependencies (calls openssl binary)
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """TLS certificate generation for tunnel mode.
