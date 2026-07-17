@@ -11,7 +11,7 @@
 #               - Watchdog is launched as a daemon thread per session
 #               - All inputs validated at boundary before use
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Listen mode handler — single TCP/UDP listener on a port."""
@@ -23,6 +23,7 @@ import sys
 from typing import Any
 
 from socat_manager.commands import (
+    build_filter_opts,
     build_socat_listen_cmd,
     cmd_list_to_string,
     format_socat_host,
@@ -91,6 +92,20 @@ def mode_listen(args: Any) -> None:
             log_error(str(exc), "listen")
             sys.exit(1)
 
+    # Source-filter options (range=, tcpwrap=). Family-checked against proto;
+    # the dual-stack alternate shares the same address family, so the same
+    # fragment applies to both listeners.
+    filter_opts: str = ""
+    try:
+        filter_opts = build_filter_opts(
+            allow=getattr(args, "allow", "") or "",
+            tcpwrap=getattr(args, "tcpwrap", "") or "",
+            proto=proto,
+        )
+    except ValidationError as exc:
+        log_error(str(exc), "listen")
+        sys.exit(1)
+
     session_name: str = ""
     if args.name:
         try:
@@ -153,7 +168,7 @@ def mode_listen(args: Any) -> None:
         _create_capture_log(capture_logfile)
 
     # --- Build socat command ---
-    cmd: list[str] = build_socat_listen_cmd(proto, port, logfile, extra_opts, capture)
+    cmd: list[str] = build_socat_listen_cmd(proto, port, logfile, extra_opts, capture, filter_opts)
 
     # --- Display configuration ---
     print_banner("Listener")
@@ -211,7 +226,7 @@ def mode_listen(args: Any) -> None:
             alt_name: str = f"{alt_proto}-{port}"
             alt_logfile: str = str(paths.log_dir / f"listener-{alt_proto}-{port}.log")
             alt_cmd: list[str] = build_socat_listen_cmd(
-                alt_proto, port, alt_logfile, extra_opts, capture,
+                alt_proto, port, alt_logfile, extra_opts, capture, filter_opts,
             )
 
             if check_port_available(port, alt_proto):
