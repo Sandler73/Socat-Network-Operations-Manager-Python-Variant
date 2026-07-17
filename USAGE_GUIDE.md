@@ -1,6 +1,6 @@
 # Socat Network Operations Manager — Usage Guide
 
-**Python Variant v0.9.0**
+**Python Variant v1.0.1**
 
 This guide provides complete instructions for installing, configuring, and executing
 `socat-manager` across three deployment models: standalone script execution, pip
@@ -232,6 +232,52 @@ deactivate
 
 ## 3. Mode Reference
 
+### 3.0 Logging Verbosity (all modes)
+
+Every operational subcommand accepts the same console logging controls. They govern what is printed to the terminal; the master log file under `logs/` records the run independently.
+
+| Option | Effect |
+|--------|--------|
+| `--log-level <LEVEL>` | Set the console level explicitly to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Case-insensitive. |
+| `-v, --verbose` | Shortcut for `--log-level DEBUG`. |
+| `-q, --quiet` | Shortcut for `--log-level WARNING` — suppresses routine informational lines while keeping warnings and errors. |
+
+When more than one is supplied, precedence is: an explicit `--log-level` wins over both shortcuts; between the shortcuts, `--verbose` wins over `--quiet`, since surfacing more detail is the safer outcome. With none supplied, the level is `INFO`.
+
+```bash
+socat-manager listen --port 8080 --log-level WARNING   # quieter console
+socat-manager status --log-level DEBUG                 # full detail
+socat-manager stop --all --quiet                       # warnings and errors only
+```
+
+> On the `status` subcommand, `-v` retains its established meaning of showing system listener information; use `--log-level DEBUG` there to raise console verbosity.
+
+### 3.0.1 Source Filtering (listener modes)
+
+The `listen`, `batch`, `forward`, `tunnel`, and `redirect` modes accept two options that restrict which peers a listener will accept. Both are applied to the listener side of the socat command.
+
+| Option | Effect |
+|--------|--------|
+| `--allow <CIDR>` | Accept connections only from the given source range. Takes an IPv4 or IPv6 network in CIDR notation and maps to socat's `range=` address option. IPv6 is bracketed automatically. The range's address family must match the listener protocol. |
+| `--tcpwrap [NAME]` | Enforce access through TCP wrappers (`/etc/hosts.allow` and `/etc/hosts.deny`) using the given daemon name (default `socat`). Maps to socat's `tcpwrap=` option and requires a socat built with libwrap. |
+
+```bash
+# Only accept connections from the 10.0.0.0/8 network
+socat-manager listen --port 8080 --allow 10.0.0.0/8
+
+# IPv6 source restriction on an IPv6 listener
+socat-manager listen --port 8080 --proto tcp6 --allow 2001:db8::/32
+
+# Combine a source range with TCP wrappers (daemon name "socat")
+socat-manager forward --lport 8080 --rhost 10.0.0.5 --rport 80 \
+    --allow 192.168.0.0/16 --tcpwrap
+
+# TCP wrappers with a custom daemon name in hosts.allow/deny
+socat-manager redirect --lport 8443 --rhost example.com --rport 443 --tcpwrap myservice
+```
+
+`--allow` restricts by source address at the socket layer; `--tcpwrap` consults the host access files. They can be used together. A range whose family does not match the listener protocol (for example an IPv6 range on a `tcp4` listener) is rejected before launch.
+
 ### 3.1 listen — Single Port Listener
 
 Start a single TCP or UDP listener that captures incoming data to a log file. The listener uses socat's `fork` option to handle concurrent connections — each client gets its own forked handler process. Data flows unidirectionally from the network to the log file (socat `-u` flag).
@@ -285,11 +331,15 @@ socat-manager listen --port 8080 --dual-stack --capture --watchdog --name my-lis
 | `--logfile <PATH>` | str | No | `logs/listener-{proto}-{port}.log` | Custom data log file path. Validated for path traversal and shell metacharacters before reaching socat. |
 | `--socat-opts <OPTS>` | str | No | — | Extra socat address options. Appended to listener address. Must match whitelist `[a-zA-Z0-9=,.:/_-]`. |
 | `--capture` | flag | No | false | Enable traffic capture. Adds socat `-v` flag. Creates capture log at `logs/capture-{proto}-{port}-{timestamp}.log` with 0o600 permissions. |
+| `--allow <CIDR>` | string | No | (none) | Accept only connections from this IPv4/IPv6 source range (socat `range=`). |
+| `--tcpwrap [NAME]` | string | No | (none) | Enforce TCP wrappers via /etc/hosts.allow and /etc/hosts.deny (socat `tcpwrap=`, default name `socat`). |
 | `--watchdog` | flag | No | false | Enable auto-restart monitoring via daemon thread. |
 | `--max-restarts <N>` | int | No | 10 | Maximum watchdog restart attempts before giving up. |
 | `--backoff <N>` | int | No | 1 | Initial watchdog backoff delay in seconds. Doubles each restart (1→2→4→8→16→32→60→60...). |
 | `--dual-stack` | flag | No | false | Also start listener on alternate protocol (tcp4↔udp4, tcp6↔udp6). Each gets independent session ID. |
 | `-v, --verbose` | flag | No | false | Enable DEBUG-level logging. |
+| `--log-level <LEVEL>` | choice | No | INFO | Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL. Overrides `--verbose` and `--quiet`. |
+| `-q, --quiet` | flag | No | false | Suppress informational output (alias for `--log-level WARNING`). |
 
 **Generated socat commands** (actual output from command builders):
 
@@ -368,11 +418,15 @@ socat-manager batch --file conf/ports.conf --watchdog
 | `--proto <PROTO>` | str | No | `tcp4` | Protocol for all listeners. |
 | `--socat-opts <OPTS>` | str | No | — | Extra socat address options for all listeners. |
 | `--capture` | flag | No | false | Enable traffic capture for all listeners. |
+| `--allow <CIDR>` | string | No | (none) | Accept only connections from this IPv4/IPv6 source range (socat `range=`). |
+| `--tcpwrap [NAME]` | string | No | (none) | Enforce TCP wrappers via /etc/hosts.allow and /etc/hosts.deny (socat `tcpwrap=`, default name `socat`). |
 | `--watchdog` | flag | No | false | Enable auto-restart for all listeners. |
 | `--max-restarts <N>` | int | No | 10 | Max restart attempts per listener. |
 | `--backoff <N>` | int | No | 1 | Initial backoff seconds per listener. |
 | `--dual-stack` | flag | No | false | Start both TCP and UDP per port. |
 | `-v, --verbose` | flag | No | false | Debug logging. |
+| `--log-level <LEVEL>` | choice | No | INFO | Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL. Overrides `--verbose` and `--quiet`. |
+| `-q, --quiet` | flag | No | false | Suppress informational output (alias for `--log-level WARNING`). |
 
 **Behavioral notes:**
 
@@ -430,11 +484,15 @@ socat-manager forward --lport 8080 --rhost 2001:db8::1 --rport 80 --proto tcp6
 | `--remote-proto <PROTO>` | str | No | (same as `--proto`) | Remote connection protocol. Enables cross-protocol forwarding (e.g., TCP listen → UDP remote). |
 | `--name <n>` | str | No | `fwd-{lport}-{rhost}-{rport}` | Custom session name. |
 | `--capture` | flag | No | false | Enable traffic capture. Capture log: `logs/capture-{proto}-{lport}-{rhost}-{rport}-{timestamp}.log`. |
+| `--allow <CIDR>` | string | No | (none) | Accept only connections from this IPv4/IPv6 source range (socat `range=`). |
+| `--tcpwrap [NAME]` | string | No | (none) | Enforce TCP wrappers via /etc/hosts.allow and /etc/hosts.deny (socat `tcpwrap=`, default name `socat`). |
 | `--watchdog` | flag | No | false | Enable auto-restart. |
 | `--max-restarts <N>` | int | No | 10 | Max restart attempts. |
 | `--backoff <N>` | int | No | 1 | Initial backoff seconds. |
 | `--dual-stack` | flag | No | false | Also start forwarder on alternate protocol. |
 | `-v, --verbose` | flag | No | false | Debug logging. |
+| `--log-level <LEVEL>` | choice | No | INFO | Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL. Overrides `--verbose` and `--quiet`. |
+| `-q, --quiet` | flag | No | false | Suppress informational output (alias for `--log-level WARNING`). |
 
 **Generated socat commands** (actual output):
 
@@ -506,11 +564,15 @@ socat-manager tunnel --port 4443 --rhost 10.0.0.5 --rport 22 --capture
 | `--proto <PROTO>` | str | No | — | Only validates protocol. `udp`, `udp4`, `udp6` are rejected with a clear error and guidance to use `forward --proto udp4`. `tcp6` triggers a warning and falls back to TCP4. |
 | `--name <n>` | str | No | `tunnel-{lport}-{rhost}-{rport}` | Custom session name. |
 | `--capture` | flag | No | false | Enable capture of decrypted traffic. Capture log: `logs/capture-tls-{lport}-{rhost}-{rport}-{timestamp}.log`. |
+| `--allow <CIDR>` | string | No | (none) | Accept only connections from this IPv4/IPv6 source range (socat `range=`). |
+| `--tcpwrap [NAME]` | string | No | (none) | Enforce TCP wrappers via /etc/hosts.allow and /etc/hosts.deny (socat `tcpwrap=`, default name `socat`). |
 | `--watchdog` | flag | No | false | Enable auto-restart. |
 | `--max-restarts <N>` | int | No | 10 | Max restart attempts. |
 | `--backoff <N>` | int | No | 1 | Initial backoff seconds. |
 | `--dual-stack` | flag | No | false | Add a plaintext UDP forwarder alongside the TLS tunnel (with warning that UDP traffic is NOT encrypted). |
 | `-v, --verbose` | flag | No | false | Debug logging. |
+| `--log-level <LEVEL>` | choice | No | INFO | Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL. Overrides `--verbose` and `--quiet`. |
+| `-q, --quiet` | flag | No | false | Suppress informational output (alias for `--log-level WARNING`). |
 
 **Generated socat commands** (actual output):
 
@@ -573,11 +635,15 @@ socat-manager redirect --lport 8443 --rhost example.com --rport 443 --dual-stack
 | `--proto <PROTO>` | str | No | `tcp4` | Protocol (both listen and connect sides use the same protocol). |
 | `--name <n>` | str | No | `redir-{proto}-{lport}-{rhost}-{rport}` | Custom session name. |
 | `--capture` | flag | No | false | Enable traffic capture. Capture log: `logs/capture-{proto}-{lport}-{rhost}-{rport}-{timestamp}.log`. |
+| `--allow <CIDR>` | string | No | (none) | Accept only connections from this IPv4/IPv6 source range (socat `range=`). |
+| `--tcpwrap [NAME]` | string | No | (none) | Enforce TCP wrappers via /etc/hosts.allow and /etc/hosts.deny (socat `tcpwrap=`, default name `socat`). |
 | `--watchdog` | flag | No | false | Enable auto-restart. |
 | `--max-restarts <N>` | int | No | 10 | Max restart attempts. |
 | `--backoff <N>` | int | No | 1 | Initial backoff seconds. |
 | `--dual-stack` | flag | No | false | Also start redirector on alternate protocol. |
 | `-v, --verbose` | flag | No | false | Debug logging. |
+| `--log-level <LEVEL>` | choice | No | INFO | Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL. Overrides `--verbose` and `--quiet`. |
+| `-q, --quiet` | flag | No | false | Suppress informational output (alias for `--log-level WARNING`). |
 
 **Generated socat commands** (actual output):
 
@@ -639,6 +705,8 @@ socat-manager status --cleanup
 | `<TARGET>` | positional | No | — | Session ID (8 hex chars), session name (exact match), or port number. If omitted, lists all sessions. |
 | `--cleanup` | flag | No | false | Remove session files for dead processes. Acquires advisory lock before cleanup. Both PID AND PGID must be confirmed dead before removal. |
 | `-v, --verbose` | flag | No | false | Debug logging. |
+| `--log-level <LEVEL>` | choice | No | INFO | Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL. Overrides `--verbose` and `--quiet`. |
+| `-q, --quiet` | flag | No | false | Suppress informational output (alias for `--log-level WARNING`). |
 
 **List output format:**
 
@@ -707,6 +775,8 @@ socat-manager stop --all
 | `--port <PORT>` | int | No | — | Stop all sessions on a port (all protocols). Port is validated via `validate_port()`. |
 | `--pid <PID>` | int | No | — | Stop by socat process PID. Found via `session_find_by_pid()`. |
 | `-v, --verbose` | flag | No | false | Debug logging. |
+| `--log-level <LEVEL>` | choice | No | INFO | Console log level: DEBUG, INFO, WARNING, ERROR, CRITICAL. Overrides `--verbose` and `--quiet`. |
+| `-q, --quiet` | flag | No | false | Suppress informational output (alias for `--log-level WARNING`). |
 
 **The 9-step stop sequence** (executed by `stop_session()` in `process.py`):
 
@@ -714,8 +784,10 @@ socat-manager stop --all
 2. **Touch `.stop` signal file**: Creates `sessions/{sid}.stop`. This tells the watchdog daemon thread "this is a deliberate stop — do NOT restart the process."
 3. **SIGTERM process group**: `os.killpg(pgid, SIGTERM)`. Signals the socat process and ALL its fork children simultaneously.
 4. **SIGTERM PID + direct children**: `os.kill(pid, SIGTERM)` followed by `pkill -TERM -P {pid}`. Belt-and-suspenders for any child that escaped the process group.
-5. **Wait grace period**: Polls `os.kill(pid, 0)` and `os.killpg(pgid, 0)` every 0.5 seconds for up to 5 seconds (10 polls total). If both PID and PGID are dead, skip to step 9.
+5. **Wait grace period**: Checks process liveness every 0.5 seconds for up to 5 seconds (10 polls total). The PID is checked with the zombie-aware liveness check, which for a child of this process polls the retained handle and collects the process when it observes termination; the process group is then checked with `os.killpg(pgid, 0)`. Collecting the child on the poll matters because a killed child would otherwise remain in the process table as a zombie that still answers signal 0, which would keep the grace loop running for the full period and make the group check read a dead process as alive. If both PID and process group are dead, skip to step 9.
 6. **Force SIGKILL if still alive**: `os.killpg(pgid, SIGKILL)` + `os.kill(pid, SIGKILL)` + `pkill -KILL -P {pid}`. SIGKILL cannot be caught or ignored.
+
+   After the kill sequence the process death is verified with the same zombie-aware check, and the child is collected so it does not linger as a zombie. This makes the reported result reflect the true outcome: a process that has actually been stopped is reported as stopped rather than flagged for manual verification.
 7. **Protocol-scoped port cleanup**: If the port is still occupied, `kill_by_port(port, proto)` queries `ss` for the specific protocol and port, verifies each found PID is a socat process via `/proc/{pid}/comm`, and sends SIGKILL only to confirmed socat processes.
 8. **Verify port freed**: `check_port_freed(port, proto, retries=DEFAULTS.stop_verify_retries)` polls `check_port_available()` up to 5 times with 0.5-second intervals. Logs a warning if the port remains occupied (may be in TIME_WAIT state).
 9. **Unregister session**: Removes the session file (`{sid}.session`), the stop signal file (`{sid}.stop`), and the launching flag file (`{sid}.launching`).
@@ -1164,7 +1236,44 @@ EOF
 
 ---
 
-## 11. Running Tests
+## 11. Auditing
+
+The framework records a persistent history of what it does — session launches, stops, watchdog restarts, and crash detections — in a SQLite database. This history survives the removal of the real-time session files, so operators can review activity long after a session has ended. The audit store supplements, and never replaces, the session files that remain the source of truth for live state.
+
+Auditing is **on by default**. Recording a failed audit write never interrupts an operation; audit errors are logged and swallowed.
+
+### Enablement and configuration
+
+| Variable / flag | Default | Effect |
+|-----------------|---------|--------|
+| `--no-audit` | (off) | Disable auditing for a single invocation. |
+| `SOCAT_MANAGER_AUDIT` | (on) | Set to `0`, `false`, `no`, or `off` to disable auditing globally. |
+| `SOCAT_MANAGER_AUDIT_REDACT` | (off) | Set to `1` to mask remote endpoints (`rhost` and its occurrence in the recorded command) with a `HOST-REDACTED` token. |
+| `SOCAT_MANAGER_AUDIT_RETENTION_DAYS` | `0` | Number of days to keep events; `0` keeps history forever. When positive, a prune runs at most once per process after a write. |
+| `SOCAT_MANAGER_AUDIT_DB` | `<base>/audit/socat-manager-audit.db` | Override the database location. |
+
+The database is created under the runtime base directory in `audit/` (directory `0o700`, database `0o600`) and uses WAL journaling so concurrent invocations and watchdog threads can write without blocking.
+
+### The `audit` subcommand
+
+```bash
+socat-manager audit                      # 50 most recent events
+socat-manager audit --session a1b2c3d4   # one session's events
+socat-manager audit --type crash         # filter by event type
+socat-manager audit --since 2026-07-01   # events at/after a date
+socat-manager audit --limit 200          # cap rows (0 = no limit)
+socat-manager audit --json               # machine-readable output
+socat-manager audit --history            # per-session lifecycle summary
+socat-manager audit --prune              # apply retention now
+```
+
+The subcommand is read-only (apart from `--prune`) and never touches live sessions. `make audit-prune` runs the prune from the project tree.
+
+### Recorded fields
+
+Each event carries a UTC timestamp, correlation ID, event type, and the applicable session identity (session ID, name, mode, protocol, local port, remote host/port, PID, PGID) plus a free-form detail field (for a launch, the constructed socat command). The `sessions_history` table keeps one row per session with its creation and end times, restart count, and final state (`stopped`, `crashed`, `watchdog_exhausted`, or `running`).
+
+## 12. Running Tests
 
 ### Prerequisites
 
@@ -1188,15 +1297,15 @@ make check-deps
 make test
 ```
 
-This runs three stages: ruff lint → unit tests → integration tests. All 510 tests must pass. Output:
+This runs three stages: ruff lint → unit tests → integration tests. The full suite (757 tests) must pass. Output:
 
 ```
   Linting source and tests...
   All checks passed!
   Running unit tests...
-  355 passed in 3.12s
+  599 passed in 3.12s
   Running integration tests...
-  155 passed in 5.85s
+  158 passed in 5.85s
 
   ✓ Full test suite passed
 ```
@@ -1257,14 +1366,14 @@ The mock socat stub (`tests/stubs/socat`) is an executable Python script that lo
 Every push and pull request triggers the GitHub Actions CI workflow which runs:
 
 1. **ruff** lint on `src/` and `tests/`
-2. **pytest** full suite (355 unit + 155 integration)
+2. **pytest** full suite (599 unit + 158 integration)
 3. Matrix across Ubuntu 22.04 and 24.04
 
 Releases are automated via tag-triggered workflow: push a `v*` tag to trigger test → build → publish with tarballs and SHA256 checksums.
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### "socat is not installed or not in PATH"
 
