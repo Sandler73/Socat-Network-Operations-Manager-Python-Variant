@@ -13,7 +13,7 @@
 #               - --cleanup removes dead sessions with advisory lock
 #               - Process tree display: pstree → ps --forest → ps (fallback chain)
 #
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Status mode handler — session listing, detail, and cleanup."""
