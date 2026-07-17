@@ -7,6 +7,211 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] — 2026-07-15
+
+### Fixed
+
+- **Documentation accuracy sweep** (principal-level audit remediation):
+  - Corrected stale test-count references (was 510/355/155) to the current 757 tests (599 unit across 22 files, 158 integration across 6) across the README, guides, and wiki.
+  - Corrected stale codebase metrics (source module, line, and function counts, and the `menu.py` size) across eight sites.
+  - Resynchronized the developer guide's 48 constant `(line N)` annotations, whose line numbers had drifted and whose values (for example `__version__`) had gone stale.
+- **Stale/missing version headers** brought current across `certs/`, `conf/`, `templates/`, `.github/workflows/`, `.github/ISSUE_TEMPLATE/`, and the test stub executables; `conf/ports.conf.example` gained a missing version line.
+
+### Added
+
+- Full header blocks on the GitHub issue-form templates (`bug_report`, `documentation`, `feature_request`) and a standardized header on `config.yml`; the bug-report form gained `audit` and source-filtering components.
+- Wiki parity documentation for `certs/` (TLS certificates) and `conf/` (batch configuration files) in the Configuration Reference, plus the audit environment variables and the `audit/` runtime directory in the environment-variable reference.
+
+### Changed
+
+- Expanded the `socat-manager.py` launcher header (Description, Notes, Execution parameters, Examples) and enriched the top-level `--help` epilog to document source filtering, log-level control, and auditing, and to describe the mode set accurately.
+- Enriched all five CI workflow headers with accurate triggers and notes.
+
+### Tooling
+
+- `bump_version.sh` now covers every version-bearing file (example configs, certificate helpers, deployment templates, CI workflows, issue templates, test stubs, and the maintenance scripts) via directory globs rather than a hand-maintained list.
+- `resync_devguide_lines.py` now maintains constant `(line N)` annotations (line numbers and values) in addition to function spans and module line counts.
+- Added the `audit-prune` Makefile target to `.PHONY`.
+
+---
+
+## [1.0.0] — 2026-07-14
+
+### Milestone
+
+- **v1.0.0.** First stable release of the Python variant, marking full functional parity with the bash original plus the audit, source-filtering, logging, and CI work of the 0.9.x series.
+
+### Added
+
+- **Persistent SQLite audit store** (`audit.py`) — a durable, after-action record of framework activity that survives removal of the real-time session files. It supplements, and never replaces, the KEY=VALUE session files that remain the source of truth for live state. `sqlite3` is standard-library, so no external runtime dependency is added.
+  - **On by default**, with opt-out via the `--no-audit` flag (per invocation) or `SOCAT_MANAGER_AUDIT=0` (globally).
+  - **Full detail by default**; opt-in redaction via `SOCAT_MANAGER_AUDIT_REDACT=1` masks the remote host in both the `rhost` column and the recorded command.
+  - **Keep-forever by default**; `SOCAT_MANAGER_AUDIT_RETENTION_DAYS>0` enables age-based pruning (at most one prune per process, plus `socat-manager audit --prune` and `make audit-prune`).
+  - Two tables: `events` (append-only log with timestamp, correlation ID, type, and session identity) and `sessions_history` (one lifecycle row per session with restart count and final state). WAL journaling allows concurrent invocations and watchdog threads to write without blocking. The audit directory is `0o700` and the database `0o600`.
+  - **Failure-isolated**: every audit operation catches and logs errors and returns, so a failed audit write can never break an operation.
+  - Emission points: `launch` and session start from `launch_socat_session`; `stop`/`stop_failed` and session end from `stop_session`; `crash`, `restart`, and the `watchdog_exhausted` end state from the watchdog.
+- **`audit` subcommand** — read-only review of the history with `--session`, `--type`, `--since`, `--limit`, `--history`, `--json`, and `--prune`.
+- **`--no-audit`** global flag on all operational subcommands, and `audit_dir`/`audit_db` runtime paths.
+- **`make audit-prune`** target.
+
+### Testing
+
+- Added `tests/unit/test_audit.py` (37 tests): enablement resolution, event and history writes, redaction, retention pruning, query filters, schema/permissions, concurrency under WAL, and failure isolation.
+- Test count: 718 to 755.
+
+### Documentation
+
+- Usage guide "Auditing" section; developer guide entries for `audit.py` and `modes/audit_view.py` plus the new config paths; wiki Configuration-Reference, Usage-Guide, and Architecture-and-Design; SECURITY.md audit-store layer; README structure updated.
+
+---
+
+## [0.9.9] — 2026-07-14
+
+### Added
+
+- **Source filtering** on the listener modes (listen, batch, forward, tunnel, redirect):
+  - `--allow <CIDR>` restricts a listener to a source address range, mapping to socat's `range=` option. Accepts IPv4 or IPv6 CIDR notation, masks host bits, brackets IPv6 automatically, and rejects a range whose address family does not match the listener protocol (family checking is skipped for the tunnel TLS listener, whose family socat selects at bind time).
+  - `--tcpwrap [NAME]` enforces TCP wrappers via `/etc/hosts.allow` and `/etc/hosts.deny`, mapping to socat's `tcpwrap=` option with a default daemon name of `socat`.
+  - New validators `validate_source_range()` and `validate_tcpwrap_name()` in `validation.py`, and a `build_filter_opts()` assembler in `commands.py`. All four command builders gained a `filter_opts` parameter that appends the options to the listener side of the command. The interactive menu offers both controls as opt-in prompts.
+
+### Testing
+
+- Added `tests/unit/test_source_filtering.py` (31 tests) covering the validators, the assembler (IPv6 bracketing, family checking), and the placement of `range=`/`tcpwrap=` on each builder's listener address; extended the menu prompt tests with source-filter collection cases.
+- Test count: 680 to 718.
+
+---
+
+## [0.9.8] — 2026-07-14
+
+### Added
+
+- **CI workflows**: A `lint.yml` quality gate (ruff lint, ruff flake8-bandit security scan with S603/S607 excluded by design, and a non-blocking mypy check), a `codeql.yml` security-and-quality analysis (push, pull request, weekly), and a `dependency-review.yml` gate on pull requests. All workflows declare least-privilege `permissions` and cancel superseded in-progress runs.
+- **Test coverage**: `tests/unit/test_child_registry_concurrency.py` (3 tests) exercises the child handle registry from many threads at once — concurrent registration with no lost updates, concurrent register/kill/reap leaving no handle or zombie, and safe reaping of unknown PIDs under contention. `tests/unit/test_menu_prompts.py` (35 tests) covers the interactive menu input primitives (cancel handling, defaults, validation with retry) and the common-flag collector, raising `menu.py` line coverage from 31.5% to 37.1%.
+
+### Changed
+
+- **test.yml**: added least-privilege `permissions`, concurrency cancellation, a coverage XML report, and a `coverage.xml` artifact upload from the Ubuntu 24.04 job. Corrected the stale workflow header versions.
+- **release.yml**: added an explicit `contents: write` permission scope and corrected the header version.
+
+### Documentation
+
+- Documented the full workflow suite in the development guide and its wiki page, and updated the README directory diagram (test counts 524 unit across 20 files; workflows enumerated).
+
+### Testing
+
+- Test count: 642 to 680.
+
+---
+
+## [0.9.7] — 2026-07-14
+
+### Added
+
+- **Deployment templates** in `templates/` with a `templates/README.md` install and usage guide:
+  - `systemd/socat-manager@.service` — a templated per-port listener unit (`socat-manager@8080`), `Type=oneshot` with `RemainAfterExit=yes` to match the launch-and-return model, with hardening directives and documented `CHANGE-ME` placeholders.
+  - `logrotate/socat-manager` — a logrotate configuration for the master, session, error, and capture logs, using `copytruncate` and a path placeholder.
+  - `socat-profiles/profiles.conf` — named, copy-paste `--socat-opts` option strings (address reuse, TCP keepalive, large buffers, low latency, source restriction, TCP wrappers), each validated against the option validator.
+
+### Documentation
+
+- Expanded the README directory diagram to enumerate the `templates/` subtree.
+
+---
+
+## [0.9.6] — 2026-07-14
+
+### Added
+
+- **conf/ examples**: Added a `conf/README.md` documenting the batch config format (one port per line, `#` comments, no inline comments) and three themed example port lists — `web-services.conf.example`, `database-services.conf.example`, and `high-ports.conf.example` — alongside the existing `ports.conf.example`. Every example was validated against the actual batch parser.
+- **certs/ examples**: Added a `certs/README.md` (built-in and manual generation, Subject Alternative Names, private-key handling), an `example-san.cnf` OpenSSL configuration, a `generate-example-cert.sh` generator that mirrors the built-in generator's parameters under a restrictive umask, and a clearly-labeled disposable self-signed pair (`example-do-not-use.crt` / `example-do-not-use.key`) for documentation and tests. The example key is expendable and must never protect real traffic.
+
+### Documentation
+
+- Updated the README directory diagram to enumerate the `conf/` and `certs/` example material.
+
+---
+
+## [0.9.5] — 2026-07-14
+
+### Added
+
+- **Makefile targets**: `lint-fix` (ruff autofix), `security` (ruff flake8-bandit S-rule scan, with the by-design subprocess rules S603/S607 excluded and rationale documented), `type-check` (mypy when installed), `resync-docs` (regenerate developer-guide line annotations), `wiki-export` (stage wiki pages into `build/wiki/`), and an aggregate `check` gate (lint + security + tests + docs).
+- **SECURITY.md**: a Supported Versions table and a direct "Report a vulnerability" advisory link in the reporting process; mirrored in the Security-Policy wiki page.
+- **LICENSE**: an `SPDX-License-Identifier: MIT` declaration and a License Notice and Attribution section codifying the collective copyright holder, the `Sandler73` maintainer identity, and the no-personal-names attribution rule.
+
+### Changed
+
+- **.gitignore**: added SQLite database and write-ahead sidecar patterns (`*.db`, `*.db-wal`, `*.db-shm`, `*.sqlite`, `*.sqlite3`). Reworked the `certs/` rules so the directory is no longer wholesale-ignored — runtime-generated `*.pem`/`*.key`/`*.crt` remain ignored, while committed example material (generator script, openssl config, README, and a clearly-labeled throwaway pair) is re-included by trailing negation rules that override the broad key patterns.
+- Added a targeted `# noqa: S104` with rationale on the interactive bind-address default (`0.0.0.0`), so the security scan still flags any new unintended bind-all.
+
+---
+
+## [0.9.4] — 2026-07-14
+
+### Added
+
+- **Issue and pull request templates**: Added structured GitHub issue forms under
+  `.github/ISSUE_TEMPLATE/` — a bug report, a feature request, and a documentation
+  form — plus a chooser `config.yml` that disables blank issues and routes security
+  reports to a private advisory and usage questions to Discussions. Added
+  `.github/PULL_REQUEST_TEMPLATE.md` with the project's change-type, testing-evidence,
+  documentation, and security and quality gates.
+
+### Documentation
+
+- Reworked the "Reporting Bugs" section of `CONTRIBUTING.md` to describe the issue
+  forms and added a "Submitting Pull Requests" section describing the PR template's
+  expectations (regression test for bug fixes, present-tense docs, changelog in both files).
+
+---
+
+## [0.9.3] — 2026-07-14
+
+### Added
+
+- **Console log-level selection**: All operational subcommands now accept `--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}` (case-insensitive) to set console verbosity explicitly, and `-q`/`--quiet` as a shortcut for `--log-level WARNING`. The pre-existing `-v`/`--verbose` remains as a shortcut for `--log-level DEBUG`. A new `resolve_log_level()` in `logging_setup.py` centralizes the precedence: an explicit `--log-level` overrides both shortcuts, and `--verbose` beats `--quiet` when both are supplied. The `status -v` listener-info toggle is unchanged; use `--log-level DEBUG` there to raise console verbosity.
+
+### Testing
+
+- Added `tests/unit/test_log_level.py` (23 tests) covering the resolution precedence, case-insensitive parsing, rejection of unknown and non-offered level names, and the CLI surface across subcommands including the preserved `status -v` behavior.
+- Test count: 619 to 642.
+
+---
+
+## [0.9.2] — 2026-07-14
+
+### Changed
+
+- **Author metadata**: The package author is now recorded as `Sandler73` in `src/socat_manager/__init__.py` and `pyproject.toml`, with the project's collective identity, "Socat Network Operations Manager Contributors," retained for the copyright notice in `LICENSE`. The developer guide's record of the `__author__` constant was updated to match.
+
+### Documentation
+
+- Rewrote the README "Directory Structure" diagram to depict the published repository layout: community-health files (`SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`) at the repository root, long-form guides under `docs/`, and no `wiki/` directory, since the wiki pages are extracted to the GitHub Wiki rather than shipped as a subdirectory. Corrected the counts in the diagram to match the source: 463 unit tests across 17 files, 158 integration tests across 6 files, 11 whitelist validators, 7 operational mode handlers, and updated stale descriptions. The `templates/` and `certs/` entries now describe their intended contents (deployment templates and TLS certificate examples with a generation helper).
+
+---
+
+## [0.9.1] — 2026-07-14
+
+### Fixed
+
+- **process.py / watchdog.py**: The stop sequence now evaluates process death with the zombie-aware liveness check and collects the terminated child, rather than probing with a bare `os.kill(pid, 0)`. A socat process is a direct child of whatever process launched it, so when a session is launched and stopped within one process — as it is from the interactive menu — the killed child remained in the process table as a zombie. Because a zombie still answers signal 0, the grace-period wait (step 5) ran for its full duration on every stop, the death verification (step 6b) read the dead process as still alive and returned `False` with a spurious "may not be fully stopped" warning, and the child and its retained handle leaked. `stop_session()` now checks liveness through `process_is_running()` in both step 5 and step 6b and calls `reap_child()` once death is confirmed; the watchdog's deliberate-stop exit path also collects the child. The one-shot CLI path was unaffected because a re-parented process is collected by init.
+
+- **session.py**: `session_update_process()` no longer overwrites the `STARTED` field. `STARTED` records when a session was created; a watchdog restart changes which process the session owns, not when the session began, so rewriting it silently discarded the original creation time. The function now updates only `PID` and `PGID` and preserves `STARTED`.
+
+### Documentation
+
+- Corrected the stop-sequence descriptions in the usage guide, developer guide, and architecture wiki (steps 5 and 6b) to describe zombie-aware death detection and child collection, and corrected the `launch_stability_delay` note and the "session says ALIVE but process is dead" troubleshooting entry accordingly.
+- Corrected the `session_update_process()` description across the developer guide and wiki to state that `STARTED` is preserved.
+- Made the developer-guide line-number resynchronization utility module-scoped so a helper defined in several modules resolves to the correct per-module span, and added the missing developer-guide entries for the child-handle and protocol-scope functions.
+
+### Testing
+
+- Added `tests/unit/test_stop_reaping.py` (4 tests) covering a real in-process child: the stop reports success for a killed child, leaves no zombie, drops the retained handle, and completes without consuming the full grace period.
+- Added a `session_update_process()` test asserting the original `STARTED` timestamp survives a process-identity update.
+- Test count: 614 to 619.
+
+---
+
 ## [0.9.0] — 2026-07-14
 
 ### Summary
