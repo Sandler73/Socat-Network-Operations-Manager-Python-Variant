@@ -1,5 +1,5 @@
 #======================================================================
-# Makefile — Socat Network Operations Manager (Python Variant)
+# Makefile - Socat Network Operations Manager (Python Variant)
 #======================================================================
 #
 # Synopsis   : Build, test, lint, install, and package socat-manager.
@@ -71,9 +71,10 @@ COV_OPTS    := --cov=$(PACKAGE) --cov-report=term-missing
 # PHONY DECLARATIONS
 # =====================================================================
 
-.PHONY: help check-deps lint test test-unit test-integration test-smoke \
+.PHONY: help check-deps lint lint-fix security type-check resync-docs \
+        wiki-export check test test-unit test-integration test-smoke \
         test-coverage install uninstall verify venv dist clean clean-all \
-        docs _check-python _check-socat
+        docs audit-prune _check-python _check-socat
 
 .DEFAULT_GOAL := help
 
@@ -163,6 +164,48 @@ lint: _check-python ## Run ruff linter on all Python files
 	@echo "  Linting source and tests..."
 	@$(RUFF) check $(SRC_DIR)/ $(TEST_DIR)/ --select E,W,F,I --ignore E501
 	@echo "  ✓ All checks passed"
+
+lint-fix: _check-python ## Apply ruff autofixes to source and tests
+	@echo "  Applying ruff autofixes..."
+	@$(RUFF) check $(SRC_DIR)/ $(TEST_DIR)/ --select E,W,F,I --ignore E501 --fix
+	@echo "  ✓ Autofixes applied"
+
+security: _check-python ## Static security scan (ruff flake8-bandit S-rules)
+	@echo "  Scanning source for security anti-patterns..."
+	@# S603/S607 are ignored by design: this tool orchestrates socat, ss, and
+	@# openssl through subprocess with argument lists (never shell=True) and
+	@# resolves them via PATH. Those two rules flag every such call and are the
+	@# intended secure pattern here. All other S-rules stay active, including
+	@# shell injection, eval/exec, hardcoded secrets, and weak crypto.
+	@$(RUFF) check $(SRC_DIR)/ --select S --ignore S603,S607
+	@echo "  ✓ No security findings"
+
+type-check: _check-python ## Static type check (mypy, if installed)
+	@echo "  Type-checking source..."
+	@if $(PYTHON) -c "import mypy" >/dev/null 2>&1; then \
+		PYTHONPATH=src $(PYTHON) -m mypy $(SRC_DIR)/$(PACKAGE); \
+		echo "  ✓ Type check passed"; \
+	else \
+		echo "  ⚠ mypy not installed — skipping (pip install --break-system-packages mypy)"; \
+	fi
+
+resync-docs: _check-python ## Regenerate DEVELOPER_GUIDE line annotations from source
+	@echo "  Resynchronizing developer-guide line annotations..."
+	@$(PYTHON) tasks/resync_devguide_lines.py
+	@echo "  ✓ Annotations resynchronized"
+
+wiki-export: ## Stage wiki pages for GitHub Wiki publication into build/wiki
+	@echo "  Staging wiki pages..."
+	@mkdir -p build/wiki
+	@cp docs/wiki/*.md build/wiki/
+	@echo "  ✓ Wiki pages staged in build/wiki/ ($$(ls build/wiki/*.md | wc -l | tr -d ' ') pages)"
+
+audit-prune: _check-python ## Apply the configured audit retention now (prune old events)
+	PYTHONPATH=src $(PYTHON) -m socat_manager audit --prune
+
+check: lint security test docs ## Full quality gate: lint + security + tests + docs
+	@echo ""
+	@echo "  ✓ All quality gates passed"
 
 # =====================================================================
 # TESTING
