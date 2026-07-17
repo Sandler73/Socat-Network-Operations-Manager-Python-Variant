@@ -5,7 +5,7 @@
 # Description : Package initializer exposing version metadata and key symbols.
 #               This is the top-level package for the Python reimplementation
 #               of socat_manager.sh v2.3.0.
-# Version     : 0.9.0
+# Version     : 1.0.1
 # ==============================================================================
 
 """Socat Network Operations Manager — Python variant.
@@ -16,6 +16,6 @@ across seven operational modes: listen, batch, forward, tunnel, redirect,
 status, and stop.
 """
 
-__version__: str = "0.9.0"
-__author__: str = "Ryan Sandler"
+__version__: str = "1.0.1"
+__author__: str = "Sandler73"
 __project__: str = "Socat Network Operations Manager"
