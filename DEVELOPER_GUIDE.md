@@ -1,10 +1,10 @@
 # Developer Guide — Exhaustive Code Reference
 
-## Socat Network Operations Manager (Python Variant) v0.9.0
+## Socat Network Operations Manager (Python Variant) v1.0.1
 
 This document provides an exhaustive reference for every source module, every class, every function, every constant, and every significant variable in the framework. It is generated from actual source code inspection and documents real behavior, security properties, cross-references, and wiring details.
 
-**Total codebase**: 19 source modules, 6,779 lines, 115 functions, 5 frozen dataclasses, 30+ constants
+**Total codebase**: 21 source modules, 8,761 lines, 160 functions, 5 frozen dataclasses, 30+ constants
 
 ## Table of Contents
 
@@ -40,26 +40,26 @@ This document provides an exhaustive reference for every source module, every cl
 
 ### Constants and Module-Level Variables
 
-- **`__version__`** `str` = `'0.1.0'` (line 19)
-- **`__author__`** `str` = `'Ryan Sandler'` (line 20)
+- **`__version__`** `str` = `'1.0.1'` (line 19)
+- **`__author__`** `str` = `'Sandler73'` (line 20)
 - **`__project__`** `str` = `'Socat Network Operations Manager'` (line 21)
 
 
 ## `config.py`
 
 **Path**: `src/socat_manager/config.py`  
-**Lines**: 432  
+**Lines**: 442  
 **Purpose**: Configuration Constants, Frozen Dataclasses, and Protocol Maps
 
 **Module docstring**: Configuration constants and defaults for socat-manager.
 
-**Design Rationale**: This module is the single source of truth for all configuration values in the framework. Every constant, default, protocol mapping, field name, validation limit, and UI symbol is defined here and imported by other modules. This eliminates magic numbers and strings from the codebase and ensures consistency across all 19 source files.
+**Design Rationale**: This module is the single source of truth for all configuration values in the framework. Every constant, default, protocol mapping, field name, validation limit, and UI symbol is defined here and imported by other modules. This eliminates magic numbers and strings from the codebase and ensures consistency across all 21 source files.
 
 **Architecture Role**: Foundation layer — imported by every other module. No module-level imports from other socat_manager modules (zero circular dependency risk). All dataclasses use `frozen=True, slots=True` for immutability and memory efficiency.
 
 **Key Design Decisions**:
 - `resolve_base_dir()` checks `SOCAT_MANAGER_BASE` environment variable first, then falls back to the script's parent directory. This allows operators to redirect all runtime artifacts (sessions/, logs/, certs/) to a custom location without code changes.
-- `RuntimePaths` is a frozen dataclass with computed properties (`log_dir`, `session_dir`, `cert_dir`, `conf_dir`, `session_lock_file`) that derive paths from `base_dir`. This ensures directory structure is consistent and centralized.
+- `RuntimePaths` is a frozen dataclass with computed properties (`log_dir`, `session_dir`, `cert_dir`, `conf_dir`, `audit_dir`, `audit_db`, `session_lock_file`) that derive paths from `base_dir`. This ensures directory structure is consistent and centralized.
 - `EXEC_TIMESTAMP` and `CORRELATION_ID` are generated once at import time and remain constant for the entire execution. This means every log entry, session file, and capture log within a single invocation shares the same correlation ID for traceability.
 - Protocol maps (`SOCAT_LISTEN_ADDR`, `SOCAT_CONNECT_ADDR`, `ALT_PROTOCOL`, `PROTOCOL_NORMALIZATION`) are the bridge between user-facing protocol names and socat's address format strings. The command builders in `commands.py` look up these maps to construct correct socat syntax.
 - `SessionFields` uses a frozen dataclass (not an enum) so field names are plain strings that can be used directly as dictionary keys and matched against session file KEY=VALUE lines.
@@ -69,35 +69,59 @@ This document provides an exhaustive reference for every source module, every cl
 ### Constants and Module-Level Variables
 
 - **`SCRIPT_NAME`** `Final[str]` = `'socat-manager'` (line 45)
-- **`SCRIPT_VERSION`** `Final[str]` = `'0.1.0'` (line 46)
-- **`DEFAULTS`** `Final[Defaults]` = `Defaults()` (line 164)
-- **`EXEC_TIMESTAMP`** `Final[str]` = `_generate_exec_timestamp()` (line 205)
-- **`CORRELATION_ID`** `Final[str]` = `_generate_correlation_id()` (line 206)
-- **`SCRIPT_PID`** `Final[int]` = `os.getpid()` (line 207)
-- **`COLORS`** `Final[Colors]` = `Colors()` (line 256)
-- **`SYMBOLS`** `Final[Symbols]` = `Symbols()` (line 257)
-- **`VALID_PROTOCOLS`** `Final[frozenset[str]]` = `frozenset({'tcp4', 'tcp6', 'udp4', 'udp6'})` (line 265)
-- **`PROTOCOL_NORMALIZATION`** `Final[dict[str, str]]` = `{'tcp': 'tcp4', 'tcp4': 'tcp4', 'tcp6': 'tcp6', 'udp': 'udp4', 'udp4': 'udp4', 'udp6': 'udp6'}` (line 270)
-- **`ALT_PROTOCOL`** `Final[dict[str, str]]` = `{'tcp4': 'udp4', 'udp4': 'tcp4', 'tcp6': 'udp6', 'udp6': 'tcp6'}` (line 280)
-- **`SOCAT_LISTEN_ADDR`** `Final[dict[str, str]]` = `{'tcp4': 'TCP4-LISTEN', 'tcp6': 'TCP6-LISTEN', 'udp4': 'UDP4-LISTEN', 'udp6': 'UDP6-LISTEN'}` (line 288)
-- **`SOCAT_CONNECT_ADDR`** `Final[dict[str, str]]` = `{'tcp4': 'TCP4', 'tcp6': 'TCP6', 'udp4': 'UDP4', 'udp6': 'UDP6'}` (line 296)
-- **`SESSION_FIELDS`** `Final[SessionFields]` = `SessionFields()` (line 329)
-- **`SESSION_FILE_VERSION`** `Final[str]` = `'v2.3'` (line 332)
+- **`SCRIPT_VERSION`** `Final[str]` = `'1.0.1'` (line 46)
+- **`DEFAULTS`** `Final[Defaults]` = `Defaults()` (line 174)
+- **`EXEC_TIMESTAMP`** `Final[str]` = `_generate_exec_timestamp()` (line 215)
+- **`CORRELATION_ID`** `Final[str]` = `_generate_correlation_id()` (line 216)
+- **`SCRIPT_PID`** `Final[int]` = `os.getpid()` (line 217)
+- **`COLORS`** `Final[Colors]` = `Colors()` (line 266)
+- **`SYMBOLS`** `Final[Symbols]` = `Symbols()` (line 267)
+- **`VALID_PROTOCOLS`** `Final[frozenset[str]]` = `frozenset({
+    "tcp4", "tcp6", "udp4", "udp6",
+})` (line 275)
+- **`PROTOCOL_NORMALIZATION`** `Final[dict[str, str]]` = `{
+    "tcp": "tcp4",
+    "tcp4": "tcp4",
+    "tcp6": "tcp6",
+    "udp": "udp4",
+    "udp4": "udp4",
+    "udp6": "udp6",
+}` (line 280)
+- **`ALT_PROTOCOL`** `Final[dict[str, str]]` = `{
+    "tcp4": "udp4",
+    "udp4": "tcp4",
+    "tcp6": "udp6",
+    "udp6": "tcp6",
+}` (line 290)
+- **`SOCAT_LISTEN_ADDR`** `Final[dict[str, str]]` = `{
+    "tcp4": "TCP4-LISTEN",
+    "tcp6": "TCP6-LISTEN",
+    "udp4": "UDP4-LISTEN",
+    "udp6": "UDP6-LISTEN",
+}` (line 298)
+- **`SOCAT_CONNECT_ADDR`** `Final[dict[str, str]]` = `{
+    "tcp4": "TCP4",
+    "tcp6": "TCP6",
+    "udp4": "UDP4",
+    "udp6": "UDP6",
+}` (line 306)
+- **`SESSION_FIELDS`** `Final[SessionFields]` = `SessionFields()` (line 391)
+- **`SESSION_FILE_VERSION`** `Final[str]` = `'v2.3'` (line 394)
 - **`REQUIRED_COMMANDS`** `Final[tuple[str, ...]]` = `('socat', 'openssl', 'ss')` (line 340). Note: the bash variant requires the `setsid` binary; the Python variant uses `os.setsid()` via `preexec_fn` instead.
-- **`OPTIONAL_COMMANDS`** `Final[tuple[str, ...]]` = `('flock', 'lsof', 'pstree')` (line 341)
-- **`PORT_MIN`** `Final[int]` = `1` (line 350)
-- **`PORT_MAX`** `Final[int]` = `65535` (line 351)
-- **`PRIVILEGED_PORT_THRESHOLD`** `Final[int]` = `1024` (line 352)
-- **`PORT_RANGE_MAX_SPAN`** `Final[int]` = `1000` (line 355)
-- **`SESSION_NAME_MAX_LENGTH`** `Final[int]` = `64` (line 358)
-- **`SESSION_ID_LENGTH`** `Final[int]` = `8` (line 361)
-- **`HOSTNAME_FORBIDDEN_CHARS`** `Final[str]` = `';|&$`(){}[]<>!#'` (line 364)
-- **`FILEPATH_FORBIDDEN_CHARS`** `Final[str]` = `';|&$`'` (line 367)
-- **`SOCAT_OPTS_WHITELIST`** `Final[str]` = `'a-zA-Z0-9=,.:/_\\-'` (line 370)
-- **`SESSION_NAME_WHITELIST`** `Final[str]` = `'a-zA-Z0-9._\\-'` (line 373)
-- **`IPV6_MIN_LENGTH`** `Final[int]` = `2` (line 376)
-- **`IPV6_MAX_LENGTH`** `Final[int]` = `39` (line 377)
-- **`IPV6_MAX_COLONS`** `Final[int]` = `7` (line 378)
+- **`OPTIONAL_COMMANDS`** `Final[tuple[str, ...]]` = `("flock", "lsof", "pstree")` (line 405)
+- **`PORT_MIN`** `Final[int]` = `1` (line 414)
+- **`PORT_MAX`** `Final[int]` = `65535` (line 415)
+- **`PRIVILEGED_PORT_THRESHOLD`** `Final[int]` = `1024` (line 416)
+- **`PORT_RANGE_MAX_SPAN`** `Final[int]` = `1000` (line 419)
+- **`SESSION_NAME_MAX_LENGTH`** `Final[int]` = `64` (line 422)
+- **`SESSION_ID_LENGTH`** `Final[int]` = `8` (line 425)
+- **`HOSTNAME_FORBIDDEN_CHARS`** `Final[str]` = `';|&$`(){}[]<>!#'` (line 428)
+- **`FILEPATH_FORBIDDEN_CHARS`** `Final[str]` = `';|&$`'` (line 431)
+- **`SOCAT_OPTS_WHITELIST`** `Final[str]` = `'a-zA-Z0-9=,.:/_\-'` (line 434)
+- **`SESSION_NAME_WHITELIST`** `Final[str]` = `'a-zA-Z0-9._\-'` (line 437)
+- **`IPV6_MIN_LENGTH`** `Final[int]` = `2` (line 440)
+- **`IPV6_MAX_LENGTH`** `Final[int]` = `39` (line 441)
+- **`IPV6_MAX_COLONS`** `Final[int]` = `7` (line 442)
 
 ### Class `RuntimePaths`
 **Decorators**: `dataclass(frozen=True, slots=True)`  
@@ -147,8 +171,22 @@ Directory for TLS certificates and private keys.
 
 ---
 
-#### `session_lock_file() -> Path`
+#### `audit_dir() -> Path`
 **Defined at**: line 121–124 (4 lines)
+
+Directory for the persistent audit store (permissions 0o700).
+
+---
+
+#### `audit_db() -> Path`
+**Defined at**: line 126–129 (4 lines)
+
+Default path to the SQLite audit database (permissions 0o600).
+
+---
+
+#### `session_lock_file() -> Path`
+**Defined at**: line 131–134 (4 lines)
 
 Advisory lock file for session directory operations.
 
@@ -256,7 +294,7 @@ Resolution order:
 ---
 
 #### `_generate_correlation_id() -> str`
-**Defined at**: line 172–186 (15 lines)
+**Defined at**: line 182–196 (15 lines)
 
 Generate an 8-character hex correlation ID for this execution.
 
@@ -268,7 +306,7 @@ timestamp+PID hash if uuid generation fails unexpectedly.
 ---
 
 #### `_generate_exec_timestamp() -> str`
-**Defined at**: line 189–200 (12 lines)
+**Defined at**: line 199–210 (12 lines)
 
 Generate an ISO-ish timestamp for this execution.
 
@@ -280,7 +318,7 @@ Matches bash EXEC_TIMESTAMP format exactly.
 ---
 
 #### `protocol_transport(proto: str) -> str`
-**Defined at**: line 314–323 (10 lines)
+**Defined at**: line 324–333 (10 lines)
 
 Return the transport component of a normalized protocol: `udp` for UDP protocols, `tcp` otherwise. A protocol is a transport plus an address family, and scope derivation for socket queries lives here so configuration is the single source of truth for the protocol model.
 
@@ -293,7 +331,7 @@ Return the transport component of a normalized protocol: `udp` for UDP protocols
 ---
 
 #### `protocol_family(proto: str) -> str`
-**Defined at**: line 326–335 (10 lines)
+**Defined at**: line 336–345 (10 lines)
 
 Return the address family component of a normalized protocol: `6` for IPv6 protocols, `4` otherwise.
 
@@ -306,7 +344,7 @@ Return the address family component of a normalized protocol: `6` for IPv6 proto
 ---
 
 #### `socket_scope_flags(proto: str) -> list[str]`
-**Defined at**: line 338–353 (16 lines)
+**Defined at**: line 348–363 (16 lines)
 
 Build the socket-listing flags that scope a query to one protocol. Both `ss` and `netstat` accept the same short flags: `-t`/`-u` selects the transport, `-4`/`-6` selects the address family, `-l -n` restricts to listening sockets without name resolution. A `tcp4` query yields `["-t", "-4", "-l", "-n"]`. Consumed by the port-availability and port-cleanup functions in `process.py` and by the port-status section of `session_detail()`.
 
@@ -322,7 +360,7 @@ Build the socket-listing flags that scope a query to one protocol. Both `ss` and
 ## `logging_setup.py`
 
 **Path**: `src/socat_manager/logging_setup.py`  
-**Lines**: 451  
+**Lines**: 510  
 **Purpose**: Structured Dual-Output Logging and Display Helpers
 
 **Module docstring**: Structured logging configuration for socat-manager.
@@ -330,9 +368,16 @@ Build the socket-listing flags that scope a query to one protocol. Both `ss` and
 ### Constants and Module-Level Variables
 
 - **`_dirs_ensured`** `bool` = `False` (line 58)
-- **`USE_COLOR`** `Final[bool]` = `hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()` (line 63)
-- **`verbose_mode`** `bool` = `False` (line 66)
-- **`_paths`** `RuntimePaths | None` = `None` (line 69)
+- **`USE_COLOR`** `Final[bool]` = `hasattr(sys.stderr, "isatty") and sys.stderr.isatty()` (line 63)
+- **`verbose_mode`** `bool` = `False` (line 68)
+- **`LOG_LEVEL_NAMES`** `Final[tuple[str, ...]]` = `(
+    "DEBUG",
+    "INFO",
+    "WARNING",
+    "ERROR",
+    "CRITICAL",
+)` (line 73)
+- **`_paths`** `RuntimePaths | None` = `None` (line 82)
 
 ### Class `StructuredFormatter`
 **Defined at**: line 131–197
@@ -351,7 +396,7 @@ Terminal output includes ANSI color codes when USE_COLOR is True.
 **Methods**:
 
 #### `__init__(use_color: bool) -> None`
-**Defined at**: line 153–160 (8 lines)
+**Defined at**: line 166–173 (8 lines)
 
 Initialize the structured formatter.
 
@@ -362,7 +407,7 @@ Initialize the structured formatter.
 ---
 
 #### `format(record: logging.LogRecord) -> str`
-**Defined at**: line 162–201 (40 lines)
+**Defined at**: line 175–214 (40 lines)
 
 Format a log record into the structured format.
 
@@ -377,7 +422,7 @@ Format a log record into the structured format.
 ### Functions
 
 #### `get_paths() -> RuntimePaths`
-**Defined at**: line 72–81 (10 lines)
+**Defined at**: line 85–94 (10 lines)
 
 Get or create the cached RuntimePaths instance.
 
@@ -386,7 +431,7 @@ Get or create the cached RuntimePaths instance.
 ---
 
 #### `set_base_dir(base_dir: Path) -> None`
-**Defined at**: line 84–91 (8 lines)
+**Defined at**: line 97–104 (8 lines)
 
 Override the base directory (for testing or explicit configuration).
 
@@ -397,7 +442,7 @@ Override the base directory (for testing or explicit configuration).
 ---
 
 #### `_ensure_dirs() -> None`
-**Defined at**: line 98–128 (31 lines)
+**Defined at**: line 111–141 (31 lines)
 
 Create required directory structure if missing.
 
@@ -413,8 +458,25 @@ Matches bash _ensure_dirs() (lines 213-228).
 
 ---
 
+#### `resolve_log_level(log_level: str | None = None, verbose: bool = False, quiet: bool = False) -> int`
+**Defined at**: line 221–264 (44 lines)
+
+Resolve the effective console log level from the CLI logging controls. Precedence, highest first: an explicit `log_level` name, then `verbose` (DEBUG), then `quiet` (WARNING), then the INFO default. `verbose` wins over `quiet` when both are set, because surfacing more diagnostic detail is the safer resolution, and an explicit `log_level` overrides both shortcuts. The level name is accepted case-insensitively and must be one of the offered levels — `NOTSET` and other non-offered logging attributes are rejected.
+
+**Parameters**:
+
+- log_level: Optional level name (case-insensitive): DEBUG, INFO, WARNING, ERROR, CRITICAL.
+- verbose: True when --verbose / -v was supplied.
+- quiet: True when --quiet / -q was supplied.
+
+**Returns**: The corresponding `logging` level integer.
+
+**Raises**: ValueError if `log_level` is a non-empty string that does not name an offered level.
+
+---
+
 #### `setup_logging(log_level: int) -> logging.Logger`
-**Defined at**: line 208–261 (54 lines)
+**Defined at**: line 267–320 (54 lines)
 
 Configure and return the application logger with dual output.
 
@@ -435,7 +497,7 @@ The master log filename follows the bash convention:
 ---
 
 #### `get_logger() -> logging.Logger`
-**Defined at**: line 264–273 (10 lines)
+**Defined at**: line 323–332 (10 lines)
 
 Get the application logger, initializing if needed.
 
@@ -444,7 +506,7 @@ Get the application logger, initializing if needed.
 ---
 
 #### `log_debug(msg: str, component: str = 'main') -> None`
-**Defined at**: line 281–288 (8 lines)
+**Defined at**: line 340–347 (8 lines)
 
 Log a DEBUG message with component context.
 
@@ -456,7 +518,7 @@ Log a DEBUG message with component context.
 ---
 
 #### `log_info(msg: str, component: str = 'main') -> None`
-**Defined at**: line 291–298 (8 lines)
+**Defined at**: line 350–357 (8 lines)
 
 Log an INFO message with component context.
 
@@ -468,7 +530,7 @@ Log an INFO message with component context.
 ---
 
 #### `log_warning(msg: str, component: str = 'main') -> None`
-**Defined at**: line 301–308 (8 lines)
+**Defined at**: line 360–367 (8 lines)
 
 Log a WARNING message with component context.
 
@@ -480,7 +542,7 @@ Log a WARNING message with component context.
 ---
 
 #### `log_error(msg: str, component: str = 'main') -> None`
-**Defined at**: line 311–318 (8 lines)
+**Defined at**: line 370–377 (8 lines)
 
 Log an ERROR message with component context.
 
@@ -492,7 +554,7 @@ Log an ERROR message with component context.
 ---
 
 #### `log_critical(msg: str, component: str = 'main') -> None`
-**Defined at**: line 321–328 (8 lines)
+**Defined at**: line 380–387 (8 lines)
 
 Log a CRITICAL message with component context.
 
@@ -504,7 +566,7 @@ Log a CRITICAL message with component context.
 ---
 
 #### `log_success(msg: str, component: str = 'main') -> None`
-**Defined at**: line 331–350 (20 lines)
+**Defined at**: line 390–409 (20 lines)
 
 Log a success message with green checkmark on terminal.
 
@@ -519,7 +581,7 @@ message AND writes an INFO-level log entry.
 ---
 
 #### `log_session(session_id: str, level: str, msg: str) -> None`
-**Defined at**: line 359–392 (34 lines)
+**Defined at**: line 418–451 (34 lines)
 
 Write a log entry to a per-session audit log file.
 
@@ -538,7 +600,7 @@ maintain isolation between session audit trails.
 ---
 
 #### `print_banner(subtitle: str = '') -> None`
-**Defined at**: line 401–420 (20 lines)
+**Defined at**: line 460–479 (20 lines)
 
 Print a styled section banner to stderr.
 
@@ -549,7 +611,7 @@ Print a styled section banner to stderr.
 ---
 
 #### `print_section(title: str) -> None`
-**Defined at**: line 423–435 (13 lines)
+**Defined at**: line 482–494 (13 lines)
 
 Print a section header to stderr.
 
@@ -560,7 +622,7 @@ Print a section header to stderr.
 ---
 
 #### `print_kv(key: str, value: object) -> None`
-**Defined at**: line 438–451 (14 lines)
+**Defined at**: line 497–510 (14 lines)
 
 Print a key-value pair to stderr.
 
@@ -575,7 +637,7 @@ Print a key-value pair to stderr.
 ## `validation.py`
 
 **Path**: `src/socat_manager/validation.py`  
-**Lines**: 647  
+**Lines**: 724  
 **Purpose**: Whitelist Input Validators (Trust Boundary)
 
 **Module docstring**: Input validation for all user-supplied parameters.
@@ -596,16 +658,28 @@ Print a key-value pair to stderr.
 
 ### Constants and Module-Level Variables
 
-- **`_PORT_RANGE_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('^(\\d+)-(\\d+)$')` (line 89)
-- **`_NUMERIC_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('^[0-9]+$')` (line 92)
-- **`_IPV4_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$')` (line 95)
-- **`_IPV6_CANDIDATE_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('^[0-9a-fA-F:]+$')` (line 100)
-- **`_HOSTNAME_PATTERN`** `Final[re.Pattern[str]]` (line 104)
-- **`_SESSION_ID_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('^[a-f0-9]{8}$')` (line 110)
-- **`_SESSION_NAME_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('^[a-zA-Z0-9._-]+$')` (line 113)
-- **`_SOCAT_OPTS_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('^[a-zA-Z0-9=,.:/_-]+$')` (line 116)
-- **`_HOSTNAME_FORBIDDEN_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('[;|&$`()\\{\\}\\[\\]<>!#]')` (line 119)
-- **`_FILEPATH_FORBIDDEN_PATTERN`** `Final[re.Pattern[str]]` = `re.compile('[;|&$`]')` (line 124)
+- **`_PORT_RANGE_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(r"^(\d+)-(\d+)$")` (line 96)
+- **`_NUMERIC_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(r"^[0-9]+$")` (line 99)
+- **`_IPV4_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(
+    r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$"
+)` (line 102)
+- **`_IPV6_CANDIDATE_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(r"^[0-9a-fA-F:]+$")` (line 107)
+- **`_HOSTNAME_PATTERN`** `Final[re.Pattern[str]]` (line 114)
+- **`_SESSION_ID_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(
+    rf"^[a-f0-9]{{{SESSION_ID_LENGTH}}}$"
+)` (line 120)
+- **`_SESSION_NAME_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(
+    rf"^[{SESSION_NAME_WHITELIST}]+$"
+)` (line 125)
+- **`_SOCAT_OPTS_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(
+    rf"^[{SOCAT_OPTS_WHITELIST}]+$"
+)` (line 130)
+- **`_HOSTNAME_FORBIDDEN_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(
+    r"[" + re.escape(HOSTNAME_FORBIDDEN_CHARS) + r"]"
+)` (line 135)
+- **`_FILEPATH_FORBIDDEN_PATTERN`** `Final[re.Pattern[str]]` = `re.compile(
+    r"[" + re.escape(FILEPATH_FORBIDDEN_CHARS) + r"]"
+)` (line 140)
 
 ### Class `ValidationError`
 **Defined at**: line 63–81
@@ -619,7 +693,7 @@ reason for logging and user feedback.
 **Methods**:
 
 #### `__init__(message: str, field: str, value: str) -> None`
-**Defined at**: line 75–85 (11 lines)
+**Defined at**: line 76–86 (11 lines)
 
 Initialize a ValidationError.
 
@@ -634,7 +708,7 @@ Initialize a ValidationError.
 ### Functions
 
 #### `validate_port(port: str | int) -> int`
-**Defined at**: line 149–189 (41 lines)
+**Defined at**: line 153–193 (41 lines)
 
 Validate a port number is numeric and within valid range (1-65535).
 
@@ -660,7 +734,7 @@ plan to run with sudo.
 ---
 
 #### `validate_port_range(range_str: str) -> list[int]`
-**Defined at**: line 197–237 (41 lines)
+**Defined at**: line 201–241 (41 lines)
 
 Validate a port range string and return the list of ports.
 
@@ -686,7 +760,7 @@ to prevent accidental resource exhaustion.
 ---
 
 #### `validate_port_list(list_str: str) -> list[int]`
-**Defined at**: line 245–280 (36 lines)
+**Defined at**: line 249–284 (36 lines)
 
 Validate a comma/semicolon-separated port list.
 
@@ -713,7 +787,7 @@ Returns at least one valid port or raises ValidationError.
 ---
 
 #### `validate_hostname(host: str) -> str`
-**Defined at**: line 288–376 (89 lines)
+**Defined at**: line 292–380 (89 lines)
 
 Validate a hostname or IP address for use as a network target.
 
@@ -755,7 +829,7 @@ Report whether a host string is an IPv6 literal. A host is treated as an IPv6 li
 ---
 
 #### `validate_protocol(proto: str) -> str`
-**Defined at**: line 405–431 (27 lines)
+**Defined at**: line 409–435 (27 lines)
 
 Validate and normalize a protocol string.
 
@@ -831,7 +905,7 @@ Performs five checks in order:
 ---
 
 #### `validate_socat_opts(opts: str) -> str`
-**Defined at**: line 528–560 (33 lines)
+**Defined at**: line 532–564 (33 lines)
 
 Validate user-provided socat address options for safety.
 
@@ -858,8 +932,46 @@ Empty string is valid (no extra options).
 
 ---
 
+#### `validate_source_range(cidr: str) -> str`
+**Defined at**: line 571–604 (34 lines)
+
+Validate a source address range and render it for socat's `range=` option. Accepts an IPv4 or IPv6 network in CIDR notation and returns a bare `network/prefix` for IPv4 or a bracketed `[network]/prefix` for IPv6. Host bits are permitted on input and masked off.
+
+**Parameters**:
+
+- cidr: Source range in CIDR notation (for example `10.0.0.0/8` or `2001:db8::/32`).
+
+**Returns**: The range value ready to append as `range=<value>`.
+
+**Raises**:
+
+- ValidationError: If the value is not a valid IPv4 or IPv6 network.
+
+**Security annotations**:
+
+- Parses through the standard-library `ipaddress` module; rejects anything that is not a well-formed network
+
+---
+
+#### `validate_tcpwrap_name(name: str) -> str`
+**Defined at**: line 611–637 (27 lines)
+
+Validate a TCP-wrappers daemon name for socat's `tcpwrap=` option. Restricted to a 1–64 character token of alphanumerics and `. _ -` so it cannot inject additional socat options or shell metacharacters.
+
+**Parameters**:
+
+- name: Daemon name to use with TCP wrappers.
+
+**Returns**: The validated name (unchanged).
+
+**Raises**:
+
+- ValidationError: If the name is empty or contains disallowed characters.
+
+---
+
 #### `validate_session_name(name: str) -> str`
-**Defined at**: line 568–610 (43 lines)
+**Defined at**: line 645–687 (43 lines)
 
 Validate a user-provided session name for safety.
 
@@ -886,7 +998,7 @@ Maximum length 64 characters. Prevents injection into session files
 ---
 
 #### `validate_session_id(sid: str) -> str`
-**Defined at**: line 618–647 (30 lines)
+**Defined at**: line 695–724 (30 lines)
 
 Validate a session ID is a valid 8-character lowercase hex string.
 
@@ -915,7 +1027,7 @@ paths (sessions/{sid}.session) and log messages.
 ## `session.py`
 
 **Path**: `src/socat_manager/session.py`  
-**Lines**: 1124  
+**Lines**: 1122  
 **Purpose**: Session CRUD, Lookup, Locking, Migration, and Cleanup
 
 **Module docstring**: Session management: registration, lookup, cleanup, and locking.
@@ -931,7 +1043,8 @@ paths (sessions/{sid}.session) and log messages.
 - `session_read_all_fields()` reads the entire file in a single pass and returns a dict. The listing and detail views both read once through it and then evaluate liveness from the fields already in hand, so neither re-opens the file for the alive check.
 - `process_alive()` decides liveness from a recorded PID and PGID that the caller has already read. `session_is_alive()` is a thin wrapper that reads a session's fields once and delegates to it. Callers holding a session's fields call `process_alive()` directly. The primary check routes through `process.process_is_running()`, so a socat process launched by this framework that has exited but not yet been collected is reported as dead rather than as a live zombie.
 - `session_lock()` is a context manager using `fcntl.flock` for advisory file locking. If the lock cannot be acquired (another process holds it), it logs a warning and proceeds — matching bash behavior where `_session_lock || log_debug "Proceeding without lock"`.
-- `session_update_process()` rewrites only the process identity fields (`PID`, `PGID`, `STARTED`) of an existing session, preserving every other field. It runs under the advisory lock and publishes the new record with an atomic rename, so the session file is never observed half-written. The watchdog calls it after every restart, which keeps the record aligned with the process that actually owns the port.
+- `session_update_process()` rewrites only the process identity fields (`PID`, `PGID`) of an existing session, preserving every other field including the `STARTED` creation timestamp. It runs under the advisory lock and publishes the new record with an atomic rename, so the session file is never observed half-written. The watchdog calls it after every restart, which keeps the record aligned with the process that actually owns the port.
+- The stop sequence evaluates process death with the same zombie-aware liveness check the watchdog uses, and collects the child once death is confirmed. A socat process is a direct child of whatever process launched it, so when the launch and the stop happen in one process — the interactive menu — a killed child becomes a zombie until collected. Because a zombie answers signal 0, a stop path that checked liveness with a bare `os.kill(pid, 0)` would run the grace loop for its full duration and would report a genuinely dead process as possibly still alive. Consulting the retained handle and reaping the child removes both symptoms and prevents zombie process table entries from accumulating across repeated menu stops.
 - `session_cleanup_dead()` acquires the advisory lock before iterating to prevent TOCTOU races with concurrent stop/launch operations. Both PID AND PGID must be confirmed dead before removal.
 - `migrate_legacy_sessions()` converts v1 `.pid` files to v2.3 `.session` format, deriving PGID from the running process via `ps -o pgid=`. Dead legacy sessions are simply removed.
 - `session_detail()` shows 5 sections: metadata, process tree (pstree with ps fallback), port status (ss query protocol-scoped), socat command, associated log files.
@@ -1017,7 +1130,7 @@ can manage sessions created by either variant interchangeably.
 
 Update the tracked process identity of an existing session.
 
-Rewrites the `PID`, `PGID`, and `STARTED` fields of a session file while preserving every other field (name, mode, protocol, ports, socat command, correlation ID, launcher PID) and the file header comments.
+Rewrites the `PID` and `PGID` fields of a session file while preserving every other field (name, mode, protocol, ports, socat command, correlation ID, launcher PID, and the `STARTED` creation timestamp) and the file header comments. `STARTED` records when the session was created and is left unchanged, since a restart changes which process the session owns, not when the session began.
 
 The session file is the authoritative record of which process a session owns. Any component that replaces the process behind a session — the watchdog, when it re-launches after an unexpected exit — calls this so that `session_is_alive()` and `stop_session()` act on the process that is currently running rather than a terminated predecessor.
 
@@ -1041,7 +1154,7 @@ The rewrite runs under the advisory session lock. Content is written to a tempor
 ---
 
 #### `session_unregister(sid: str) -> None`
-**Defined at**: line 372–393 (22 lines)
+**Defined at**: line 370–391 (22 lines)
 
 Remove a session file and all associated signal files.
 
@@ -1057,7 +1170,7 @@ Called after confirmed process termination. Removes:
 ---
 
 #### `session_read_field(session_file: Path, field: str) -> str`
-**Defined at**: line 402–447 (46 lines)
+**Defined at**: line 400–445 (46 lines)
 
 Read a specific field from a session file using exact key match.
 
@@ -1080,7 +1193,7 @@ Matches bash awk: $1 == key {print substr($0, length(key)+2); exit}
 ---
 
 #### `session_find_by_name(target_name: str) -> list[str]`
-**Defined at**: line 482–501 (20 lines)
+**Defined at**: line 480–499 (20 lines)
 
 Find session IDs matching an exact session name.
 
@@ -1093,7 +1206,7 @@ Find session IDs matching an exact session name.
 ---
 
 #### `session_find_by_port(target_port: int | str) -> list[str]`
-**Defined at**: line 504–524 (21 lines)
+**Defined at**: line 502–522 (21 lines)
 
 Find session IDs matching a local port.
 
@@ -1106,7 +1219,7 @@ Find session IDs matching a local port.
 ---
 
 #### `session_find_by_pid(target_pid: int | str) -> list[str]`
-**Defined at**: line 527–547 (21 lines)
+**Defined at**: line 525–545 (21 lines)
 
 Find session IDs matching a PID.
 
@@ -1136,7 +1249,7 @@ Because it takes the identity as arguments, a caller that has loaded a session's
 ---
 
 #### `session_is_alive(sid: str) -> bool`
-**Defined at**: line 603–628 (26 lines)
+**Defined at**: line 601–626 (26 lines)
 
 Check if a registered session's process is still running.
 
@@ -1157,7 +1270,7 @@ signal 0 (existence check).
 ---
 
 #### `session_get_all_ids() -> list[str]`
-**Defined at**: line 636–650 (15 lines)
+**Defined at**: line 634–648 (15 lines)
 
 List all registered session IDs.
 
@@ -1166,7 +1279,7 @@ List all registered session IDs.
 ---
 
 #### `session_count() -> int`
-**Defined at**: line 657–664 (8 lines)
+**Defined at**: line 655–662 (8 lines)
 
 Count the number of active session files.
 
@@ -1175,7 +1288,7 @@ Count the number of active session files.
 ---
 
 #### `session_list() -> bool`
-**Defined at**: line 672–739 (68 lines)
+**Defined at**: line 670–737 (68 lines)
 
 List all registered sessions with their status.
 
@@ -1187,7 +1300,7 @@ PID, PGID, mode, protocol, port, remote target, and alive/dead status.
 ---
 
 #### `session_read_all_fields(session_file: Path) -> dict[str, str]`
-**Defined at**: line 747–780 (34 lines)
+**Defined at**: line 745–778 (34 lines)
 
 Read all fields from a session file in a single pass.
 
@@ -1204,7 +1317,7 @@ of calling session_read_field() once per field.
 ---
 
 #### `session_detail(sid: str) -> bool`
-**Defined at**: line 790–966 (177 lines)
+**Defined at**: line 788–964 (177 lines)
 
 Display detailed information for a specific session.
 
@@ -1221,7 +1334,7 @@ Matches bash session_detail() output (lines 1014-1129).
 ---
 
 #### `migrate_legacy_sessions() -> int`
-**Defined at**: line 974–1084 (111 lines)
+**Defined at**: line 972–1082 (111 lines)
 
 Migrate v1 legacy .pid session files to v2.2+ .session format.
 
@@ -1238,7 +1351,7 @@ file. Dead legacy sessions are simply removed.
 ---
 
 #### `session_cleanup_dead() -> int`
-**Defined at**: line 1092–1124 (33 lines)
+**Defined at**: line 1090–1122 (33 lines)
 
 Remove session files for dead processes.
 
@@ -1256,7 +1369,7 @@ replaced but the process group is still alive.
 ## `commands.py`
 
 **Path**: `src/socat_manager/commands.py`  
-**Lines**: 358  
+**Lines**: 438  
 **Purpose**: Socat Command String Builders
 
 **Module docstring**: Socat command string builders for all operational modes.
@@ -1272,6 +1385,23 @@ replaced but the process group is still alive.
 **Command Pattern**: Every builder produces a list like `["socat", <flags>, "<listen_addr>:<port>,<options>", "<connect_addr>"]`. The `-u` flag (unidirectional) is used for listen mode; `-v` for capture; forward/redirect/tunnel use bidirectional. `cmd_list_to_string()` joins the list for display and session file storage.
 
 ### Functions
+
+#### `build_filter_opts(allow: str = '', tcpwrap: str = '', proto: str = '') -> str`
+**Defined at**: line 53–97 (45 lines)
+
+Assemble validated socat listener-side source-filter options. Converts a source range and a TCP-wrappers daemon name into the socat address options `range=<network>` and `tcpwrap=<name>`, which restrict which peers a listener accepts. When `proto` is given, the address family of the source range is checked against the listener's family so a mismatched range is rejected before socat runs. Consumed by the listen, batch, forward, tunnel, and redirect modes, which pass the result to their command builders' `filter_opts` parameter.
+
+**Parameters**:
+
+- allow: Optional source range in CIDR notation.
+- tcpwrap: Optional TCP-wrappers daemon name.
+- proto: Optional normalized listener protocol, for family checking.
+
+**Returns**: A comma-joined option fragment (possibly empty).
+
+**Raises**: ValidationError if a value is malformed or the range family does not match the listener protocol.
+
+---
 
 #### `format_socat_host(host: str) -> str`
 
@@ -1310,7 +1440,7 @@ Format a host and port as a socat address endpoint in `HOST:PORT` form, bracketi
 ---
 
 #### `cmd_list_to_string(cmd: list[str]) -> str`
-**Defined at**: line 96–109 (14 lines)
+**Defined at**: line 153–166 (14 lines)
 
 Join a command argument list into a single string.
 
@@ -1326,8 +1456,8 @@ build_socat_*_cmd() functions echo.
 
 ---
 
-#### `build_socat_listen_cmd(proto: str, port: int, logfile: str, extra_opts: str = '', capture: bool = False) -> list[str]`
-**Defined at**: line 117–174 (58 lines)
+#### `build_socat_listen_cmd(proto: str, port: int, logfile: str, extra_opts: str = '', capture: bool = False, filter_opts: str = '') -> list[str]`
+**Defined at**: line 174–238 (65 lines)
 
 Build a socat command for a single-port listener.
 
@@ -1351,8 +1481,8 @@ socat's -v flag adds verbose hex dump output on stderr.
 
 ---
 
-#### `build_socat_forward_cmd(listen_proto: str, lport: int, rhost: str, rport: int, remote_proto: str = '', capture: bool = False) -> list[str]`
-**Defined at**: line 182–237 (56 lines)
+#### `build_socat_forward_cmd(listen_proto: str, lport: int, rhost: str, rport: int, remote_proto: str = '', capture: bool = False, filter_opts: str = '') -> list[str]`
+**Defined at**: line 246–307 (62 lines)
 
 Build a socat command for bidirectional port forwarding.
 
@@ -1377,8 +1507,8 @@ socat's -v flag captures both directions.
 
 ---
 
-#### `build_socat_tunnel_cmd(lport: int, rhost: str, rport: int, cert: str, key: str, capture: bool = False, remote_proto: str = 'tcp4') -> list[str]`
-**Defined at**: line 245–302 (58 lines)
+#### `build_socat_tunnel_cmd(lport: int, rhost: str, rport: int, cert: str, key: str, capture: bool = False, remote_proto: str = 'tcp4', filter_opts: str = '') -> list[str]`
+**Defined at**: line 315–376 (62 lines)
 
 Build a socat command for an encrypted (OpenSSL) tunnel.
 
@@ -1404,8 +1534,8 @@ the hex dump shows DECRYPTED traffic.
 
 ---
 
-#### `build_socat_redirect_cmd(proto: str, lport: int, rhost: str, rport: int, capture: bool = False) -> list[str]`
-**Defined at**: line 310–358 (49 lines)
+#### `build_socat_redirect_cmd(proto: str, lport: int, rhost: str, rport: int, capture: bool = False, filter_opts: str = '') -> list[str]`
+**Defined at**: line 384–438 (55 lines)
 
 Build a socat command for transparent traffic redirection.
 
@@ -1432,7 +1562,7 @@ Protocol-aware: supports TCP and UDP independently.
 ## `process.py`
 
 **Path**: `src/socat_manager/process.py`  
-**Lines**: 798  
+**Lines**: 846  
 **Purpose**: Process Launch, Stop Sequence, and Port Availability
 
 **Module docstring**: Process launch, stop, and port management for socat-manager.
@@ -1456,7 +1586,7 @@ Protocol-aware: supports TCP and UDP independently.
 ### Functions
 
 #### `launch_socat_session(name: str, mode: str, proto: str, lport: int, cmd: list[str], rhost: str = '', rport: str = '', stderr_redirect: str = '') -> tuple[str, int]`
-**Defined at**: line 85–235 (151 lines)
+**Defined at**: line 87–257 (171 lines)
 
 Launch a socat process with session tracking and process isolation.
 
@@ -1496,7 +1626,7 @@ Key differences from bash:
 ---
 
 #### `register_child(process: subprocess.Popen) -> None`
-**Defined at**: line 261–268 (8 lines)
+**Defined at**: line 283–290 (8 lines)
 
 Record a child process handle so its exit status can be collected. Every process launched by the framework is a direct child of the management process; retaining its handle is what lets an exited child be collected rather than left as a zombie. Called by `launch_socat_session()` and by the watchdog on every replacement launch. The handle registry is guarded by a lock.
 
@@ -1507,7 +1637,7 @@ Record a child process handle so its exit status can be collected. Every process
 ---
 
 #### `reap_child(pid: int) -> int | None`
-**Defined at**: line 271–297 (27 lines)
+**Defined at**: line 293–319 (27 lines)
 
 Collect the exit status of a terminated child and drop its handle. Collecting the status removes the process table entry, so the child stops being a zombie. A child that is still running is left alone.
 
@@ -1520,7 +1650,7 @@ Collect the exit status of a terminated child and drop its handle. Collecting th
 ---
 
 #### `process_is_running(pid: int) -> bool`
-**Defined at**: line 322–358 (37 lines)
+**Defined at**: line 344–380 (37 lines)
 
 Check whether a process is running, treating an exited but uncollected child as dead. For a child of this process the Popen handle is authoritative: polling it collects a terminated child and reports the truth. An exited child stays in the process table as a zombie until collected, and a zombie still answers signal 0, so a check written against signal 0 alone would report a dead child as alive. For a process this instance did not launch, signal 0 is used, qualified by a zombie check via `/proc/{pid}/stat`.
 
@@ -1533,7 +1663,7 @@ Check whether a process is running, treating an exited but uncollected child as 
 ---
 
 #### `_is_zombie(pid: int) -> bool`
-**Defined at**: line 300–319 (20 lines)
+**Defined at**: line 322–341 (20 lines)
 
 Report whether a PID names a process that has exited but not been reaped, by reading its state from `/proc/{pid}/stat`. Used to qualify a signal-0 liveness check for processes that are not children of this instance.
 
@@ -1546,7 +1676,7 @@ Report whether a PID names a process that has exited but not been reaped, by rea
 ---
 
 #### `check_port_available(port: int, proto: str) -> bool`
-**Defined at**: line 396–451 (56 lines)
+**Defined at**: line 418–473 (56 lines)
 
 Check if a port is available for binding on a specific protocol.
 
@@ -1567,7 +1697,7 @@ Uses ss (preferred) or netstat to detect existing listeners. The query is scoped
 ---
 
 #### `check_port_freed(port: int, proto: str, retries: int = 0) -> bool`
-**Defined at**: line 459–486 (28 lines)
+**Defined at**: line 481–508 (28 lines)
 
 Verify that a port has been released after stopping a session.
 
@@ -1584,7 +1714,7 @@ Retries multiple times with a delay to account for TIME_WAIT state. Scoped to th
 ---
 
 #### `kill_by_port(port: int, proto: str) -> None`
-**Defined at**: line 494–560 (67 lines)
+**Defined at**: line 516–582 (67 lines)
 
 Last-resort function to kill socat processes on a specific port.
 
@@ -1607,7 +1737,7 @@ The query is scoped to both the transport and the address family of the supplied
 ---
 
 #### `_extract_pids_from_line(line: str, pids: set[int]) -> None`
-**Defined at**: line 563–578 (16 lines)
+**Defined at**: line 585–600 (16 lines)
 
 Extract PID numbers from an ss -p output line.
 
@@ -1622,7 +1752,7 @@ We extract the numeric PID values.
 ---
 
 #### `_is_socat_process(pid: int) -> bool`
-**Defined at**: line 581–598 (18 lines)
+**Defined at**: line 603–620 (18 lines)
 
 Check if a PID belongs to a socat process.
 
@@ -1638,7 +1768,7 @@ This prevents kill_by_port from killing unrelated services.
 ---
 
 #### `_line_matches_port(line: str, port: int) -> bool`
-**Defined at**: line 374–388 (15 lines)
+**Defined at**: line 396–410 (15 lines)
 
 Check whether a single line of `ss` or `netstat` output refers to the given local port, matching the port as the trailing component of an address so a different port that merely contains the digits is not matched.
 
@@ -1652,7 +1782,7 @@ Check whether a single line of `ss` or `netstat` output refers to the given loca
 ---
 
 #### `stop_session(sid: str) -> bool`
-**Defined at**: line 606–798 (193 lines)
+**Defined at**: line 628–846 (219 lines)
 
 Execute the 9-step stop sequence for a session.
 
@@ -1670,6 +1800,8 @@ Steps:
     8. check_port_freed() — verify port released
     9. Remove session file + signal files
 
+The grace wait (step 5) and the death verification (step 6b) evaluate the PID with the zombie-aware liveness check rather than a bare `os.kill(pid, 0)`. A socat process launched in the same process as the stop — as it is from the interactive menu — is a direct child, and a killed child stays in the process table as a zombie until collected. A zombie still answers signal 0, so a signal-0 check would keep the grace loop running for the full period and would make the verification report a dead process as still alive. The liveness check consults the retained child handle and collects the process when it observes termination, and the child is collected once more before the session file is removed, so the result reflects the true outcome and no zombie or handle is left behind.
+
 **Parameters**:
 
 - sid: Session ID to stop.
@@ -1682,6 +1814,7 @@ Steps:
 - Uses subprocess.run with argument list (never shell=True)
 - Sends signals to processes/groups
 - Uses `DEFAULTS.stop_verify_retries` for port verification retry count
+- Collects terminated children rather than leaving zombie process table entries
 
 ---
 
@@ -1689,7 +1822,7 @@ Steps:
 ## `watchdog.py`
 
 **Path**: `src/socat_manager/watchdog.py`  
-**Lines**: 363  
+**Lines**: 386  
 **Purpose**: Monitor-First Auto-Restart with Exponential Backoff
 
 **Module docstring**: Watchdog auto-restart monitor for socat sessions.
@@ -1717,7 +1850,7 @@ Steps:
 ### Functions
 
 #### `watchdog_loop(session_id: str, session_name: str, cmd: list[str], initial_pid: int, max_restarts: int = 0, backoff_initial: int = 1, stderr_redirect: str = '') -> None`
-**Defined at**: line 73–193 (121 lines)
+**Defined at**: line 74–211 (138 lines)
 
 Background watchdog that monitors a process and auto-restarts on crash.
 
@@ -1748,7 +1881,7 @@ stop — do NOT restart."
 ---
 
 #### `_wait_for_pid_death(pid: int, session_id: str, paths: object) -> None`
-**Defined at**: line 200–232 (33 lines)
+**Defined at**: line 218–255 (38 lines)
 
 Block until a process dies, evaluating liveness through `process_is_running()`, then collect the child.
 
@@ -1768,7 +1901,7 @@ early exit on deliberate stop.
 ---
 
 #### `_launch_replacement(cmd: list[str], session_id: str, session_name: str, restart_count: int, stderr_redirect: str) -> int`
-**Defined at**: line 235–299 (65 lines)
+**Defined at**: line 258–322 (65 lines)
 
 Launch a replacement socat process for the watchdog.
 
@@ -1790,7 +1923,7 @@ Launch a replacement socat process for the watchdog.
 ---
 
 #### `_handle_stop_signal(stop_file: Path, session_id: str, session_name: str) -> None`
-**Defined at**: line 302–320 (19 lines)
+**Defined at**: line 325–343 (19 lines)
 
 Handle a .stop signal file — graceful watchdog exit.
 
@@ -1803,7 +1936,7 @@ Handle a .stop signal file — graceful watchdog exit.
 ---
 
 #### `start_watchdog(session_id: str, session_name: str, cmd: list[str], initial_pid: int, max_restarts: int = 0, backoff_initial: int = 1, stderr_redirect: str = '') -> threading.Thread`
-**Defined at**: line 327–363 (37 lines)
+**Defined at**: line 350–386 (37 lines)
 
 Start a watchdog monitor as a daemon thread.
 
@@ -1870,17 +2003,148 @@ via os.open() to avoid race conditions between create and chmod.
 ---
 
 
+## `audit.py`
+
+**Path**: `src/socat_manager/audit.py`  
+**Lines**: 538  
+**Purpose**: Persistent SQLite Audit Store
+
+**Module docstring**: Persistent SQLite audit store for after-action review.
+
+**Design Rationale**: A supplement to — never a replacement for — the KEY=VALUE session files, which remain the source of truth for live state and bash interoperability. The store gives a durable history that survives session-file removal. `sqlite3` is standard-library, so this adds no external runtime dependency.
+
+**Architecture Role**: Emission points call the `record_*` functions from `process.launch_socat_session` (launch + session start), `process.stop_session` (stop / stop_failed + session end), and `watchdog.watchdog_loop` (crash, restart, and the `watchdog_exhausted` end state). The read functions back the `audit` subcommand via `modes/audit_view.py`.
+
+**Security Properties**: The audit directory is created `0o700` and the database `0o600`. All SQL binds values with `?` placeholders; the only dynamically assembled SQL fragments are hardcoded column and clause strings. Every public function is failure-isolated: any database error is logged at WARNING and swallowed so auditing can never break an operation. Remote endpoints can be masked with `SOCAT_MANAGER_AUDIT_REDACT=1`.
+
+### Functions
+
+#### `set_cli_disabled(disabled: bool) -> None`
+**Defined at**: line 104–111 (8 lines)
+
+Record whether the `--no-audit` flag disabled auditing for this invocation.
+
+**Parameters**:
+
+- disabled: True when --no-audit was supplied.
+
+---
+
+#### `audit_enabled() -> bool`
+**Defined at**: line 114–126 (13 lines)
+
+Report whether auditing is active. On by default; off when `--no-audit` was given or `SOCAT_MANAGER_AUDIT` is a false-like value (`0`, `false`, `no`, `off`).
+
+**Returns**: True if events should be recorded.
+
+---
+
+#### `retention_days() -> int`
+**Defined at**: line 135–143 (9 lines)
+
+Return the retention window in days from `SOCAT_MANAGER_AUDIT_RETENTION_DAYS` (0 means keep forever; invalid values fall back to 0).
+
+**Returns**: The retention window in days.
+
+---
+
+#### `audit_db_path() -> Path`
+**Defined at**: line 146–155 (10 lines)
+
+Return the effective database path, honoring the `SOCAT_MANAGER_AUDIT_DB` override, otherwise `RuntimePaths.audit_db`.
+
+**Returns**: The database path.
+
+---
+
+#### `record_event(event_type: str, **fields: Any) -> None`
+**Defined at**: line 286–316 (31 lines)
+
+Record a single audit event. No-op when auditing is disabled; never raises. Applies redaction when enabled and runs a retention prune at most once per process.
+
+**Parameters**:
+
+- event_type: One of the EVENT_* constants.
+- **fields: Any subset of the event columns (correlation_id, session_id, name, mode, proto, lport, rhost, rport, pid, pgid, detail).
+
+---
+
+#### `record_session_start(session_id: str, name: str, mode: str, proto: str, lport: int, rhost: str = '', rport: int = 0) -> None`
+**Defined at**: line 319–354 (36 lines)
+
+Insert a `sessions_history` row for a newly launched session using INSERT OR IGNORE so a watchdog re-launch preserves the original creation time. No-op when disabled; never raises.
+
+---
+
+#### `record_session_end(session_id: str, final_state: str) -> None`
+**Defined at**: line 357–374 (18 lines)
+
+Mark a session ended in `sessions_history` with the given final state. No-op when disabled; never raises.
+
+---
+
+#### `record_restart(session_id: str) -> None`
+**Defined at**: line 377–394 (18 lines)
+
+Increment a session's restart counter. No-op when disabled; never raises.
+
+---
+
+#### `prune(days: int) -> int`
+**Defined at**: line 417–448 (32 lines)
+
+Delete events older than the given number of days (values <= 0 delete nothing).
+
+**Parameters**:
+
+- days: Retention window.
+
+**Returns**: The number of event rows deleted (0 on any error or when disabled).
+
+---
+
+#### `query_events(session_id: str = '', event_type: str = '', since: str = '', limit: int = 50) -> list[dict[str, Any]]`
+**Defined at**: line 455–503 (49 lines)
+
+Return recorded events, most recent first, filtered by session, type, and start time.
+
+**Parameters**:
+
+- session_id: Restrict to one session ID.
+- event_type: Restrict to one event type.
+- since: Restrict to events at or after this ISO-8601 timestamp/date.
+- limit: Maximum rows (<= 0 means no limit).
+
+**Returns**: A list of row dicts (empty on error).
+
+---
+
+#### `query_history(session_id: str = '', limit: int = 50) -> list[dict[str, Any]]`
+**Defined at**: line 506–538 (33 lines)
+
+Return session lifecycle summaries, most recent first.
+
+**Parameters**:
+
+- session_id: Restrict to one session ID.
+- limit: Maximum rows (<= 0 means no limit).
+
+**Returns**: A list of row dicts (empty on error).
+
+---
+
+
 ## `cli.py`
 
 **Path**: `src/socat_manager/cli.py`  
-**Lines**: 337  
+**Lines**: 449  
 **Purpose**: CLI Argument Parser (argparse)
 
 **Module docstring**: CLI argument parser for socat-manager.
 
 **Design Rationale**: Single function `build_parser()` that constructs the complete argparse configuration. Having all CLI definitions in one place makes it easy to audit what flags are available and ensures consistency across modes.
 
-**Architecture Role**: Called by `__main__.main()` for CLI dispatch and by `menu._confirm_and_execute()` for re-parsing menu-constructed argument lists. Returns an `ArgumentParser` with 10 subparsers (7 modes + menu + help + version).
+**Architecture Role**: Called by `__main__.main()` for CLI dispatch and by `menu._confirm_and_execute()` for re-parsing menu-constructed argument lists. Returns an `ArgumentParser` with 11 subparsers (7 operational modes + audit + menu + help + version).
 
 **Key Design Decisions**:
 - `RawDescriptionHelpFormatter` on all subparsers preserves the epilog examples formatting.
@@ -1891,7 +2155,7 @@ via os.open() to avoid race conditions between create and chmod.
 ### Functions
 
 #### `build_parser() -> argparse.ArgumentParser`
-**Defined at**: line 31–337 (307 lines)
+**Defined at**: line 34–449 (416 lines)
 
 Build and return the complete CLI argument parser.
 
@@ -1903,7 +2167,7 @@ Build and return the complete CLI argument parser.
 ## `__main__.py`
 
 **Path**: `src/socat_manager/__main__.py`  
-**Lines**: 282  
+**Lines**: 305  
 **Purpose**: Entry Point, Signal Handlers, and CLI Dispatch
 
 **Module docstring**: Entry point for socat-manager: CLI dispatch and menu fallback.
@@ -1995,13 +2259,13 @@ Prints installation instructions if not found.
 
 #### `initialize_logging(args: Any) -> None`
 
-Apply the verbose flag and configure logging for this invocation.
+Resolve the logging controls and configure logging for this invocation.
 
-This is the single initialization point for logging. It runs once per invocation, immediately after argument parsing and before any path that produces output — the interactive menu, the mode handlers, and the startup banner all depend on it. The verbose flag is applied before the logger is configured, because the flag determines the effective log level and that level is fixed once the handlers are attached.
+This is the single initialization point for logging. It runs once per invocation, immediately after argument parsing and before any path that produces output — the interactive menu, the mode handlers, and the startup banner all depend on it. The effective console level is resolved with `resolve_log_level()` from three optional controls in order of precedence — an explicit `--log-level`, then `--verbose` (DEBUG), then `--quiet` (WARNING), defaulting to INFO — and applied before the logger is configured, because that level is fixed once the handlers are attached. The `verbose_mode` predicate is kept aligned with the resolved level.
 
 **Parameters**:
 
-- args: Parsed argparse Namespace, which may carry a `verbose` flag.
+- args: Parsed argparse Namespace, which may carry `log_level`, `verbose`, and `quiet` attributes.
 
 ---
 
@@ -2022,7 +2286,7 @@ Dispatch to the appropriate mode handler based on parsed args. Handles all 8 mod
 ---
 
 #### `main() -> None`
-**Defined at**: line 209–277 (69 lines)
+**Defined at**: line 232–300 (69 lines)
 
 Main entry point for socat-manager.
 
@@ -2035,7 +2299,7 @@ No arguments (or 'menu' subcommand) launches interactive mode.
 ## `menu.py`
 
 **Path**: `src/socat_manager/menu.py`  
-**Lines**: 900  
+**Lines**: 948  
 **Purpose**: Interactive TUI Menu System
 
 **Module docstring**: Interactive menu system for socat-manager.
@@ -2056,7 +2320,7 @@ No arguments (or 'menu' subcommand) launches interactive mode.
 
 ### Constants and Module-Level Variables
 
-- **`_CANCEL_KEYWORDS`** `frozenset[str]` = `frozenset({'q', 'quit', 'cancel', 'back', 'exit'})` (line 59)
+- **`_CANCEL_KEYWORDS`** `frozenset[str]` = `frozenset({"q", "quit", "cancel", "back", "exit"})` (line 61)
 
 ### Class `_MenuCancel`
 **Defined at**: line 54–56
@@ -2066,14 +2330,14 @@ Raised when user enters a cancel keyword at any menu prompt.
 ### Functions
 
 #### `_is_cancel(text: str) -> bool`
-**Defined at**: line 62–64 (3 lines)
+**Defined at**: line 64–66 (3 lines)
 
 Check if user input is a cancel keyword.
 
 ---
 
 #### `_prompt(text: str, default: str = '') -> str`
-**Defined at**: line 71–104 (34 lines)
+**Defined at**: line 73–106 (34 lines)
 
 Display a prompt and read input. Raises _MenuCancel on cancel keywords.
 
@@ -2091,7 +2355,7 @@ Display a prompt and read input. Raises _MenuCancel on cancel keywords.
 ---
 
 #### `_prompt_yn(text: str, default: str = 'n') -> bool`
-**Defined at**: line 107–143 (37 lines)
+**Defined at**: line 109–145 (37 lines)
 
 Prompt for a yes/no answer. Raises _MenuCancel on cancel.
 
@@ -2109,7 +2373,7 @@ Prompt for a yes/no answer. Raises _MenuCancel on cancel.
 ---
 
 #### `_prompt_choice(text: str, max_val: int, default: str = '') -> int`
-**Defined at**: line 146–163 (18 lines)
+**Defined at**: line 148–165 (18 lines)
 
 Prompt for a numbered choice. Raises _MenuCancel on cancel.
 
@@ -2124,7 +2388,7 @@ Prompt for a numbered choice. Raises _MenuCancel on cancel.
 ---
 
 #### `_prompt_port(text: str = 'Port', default: str = '') -> int`
-**Defined at**: line 166–173 (8 lines)
+**Defined at**: line 168–175 (8 lines)
 
 Prompt for a validated port number.
 
@@ -2135,7 +2399,7 @@ Prompt for a validated port number.
 ---
 
 #### `_prompt_host(text: str = 'Host', default: str = '') -> str`
-**Defined at**: line 176–183 (8 lines)
+**Defined at**: line 178–185 (8 lines)
 
 Prompt for a validated hostname/IP.
 
@@ -2146,7 +2410,7 @@ Prompt for a validated hostname/IP.
 ---
 
 #### `_prompt_protocol(text: str = 'Protocol', default: str = 'tcp4') -> str`
-**Defined at**: line 186–193 (8 lines)
+**Defined at**: line 188–195 (8 lines)
 
 Prompt for a validated protocol.
 
@@ -2157,7 +2421,7 @@ Prompt for a validated protocol.
 ---
 
 #### `_prompt_name(text: str = 'Session name', default: str = '') -> str`
-**Defined at**: line 196–205 (10 lines)
+**Defined at**: line 198–207 (10 lines)
 
 Prompt for a validated session name (optional — empty returns default).
 
@@ -2168,49 +2432,49 @@ Prompt for a validated session name (optional — empty returns default).
 ---
 
 #### `_print_error(msg: str) -> None`
-**Defined at**: line 212–217 (6 lines)
+**Defined at**: line 214–219 (6 lines)
 
 Print an error message to stderr.
 
 ---
 
 #### `_menu_header(title: str) -> None`
-**Defined at**: line 220–232 (13 lines)
+**Defined at**: line 222–234 (13 lines)
 
 Print a boxed submenu header.
 
 ---
 
 #### `_cancel_hint() -> None`
-**Defined at**: line 235–240 (6 lines)
+**Defined at**: line 237–242 (6 lines)
 
 Print the cancel hint line.
 
 ---
 
 #### `_cancelled() -> None`
-**Defined at**: line 243–248 (6 lines)
+**Defined at**: line 245–250 (6 lines)
 
 Print the cancelled message.
 
 ---
 
 #### `_pause() -> None`
-**Defined at**: line 251–256 (6 lines)
+**Defined at**: line 253–258 (6 lines)
 
 Wait for user to press Enter.
 
 ---
 
 #### `_menu_banner() -> None`
-**Defined at**: line 259–281 (23 lines)
+**Defined at**: line 261–283 (23 lines)
 
 Display the ASCII art SOCAT banner.
 
 ---
 
 #### `_collect_common_flags(args: list[str], offer_protocol: bool = True, offer_dualstack: bool = True) -> None`
-**Defined at**: line 288–339 (52 lines)
+**Defined at**: line 290–344 (55 lines)
 
 Collect common flags shared across operational modes.
 
@@ -2231,7 +2495,7 @@ backoff delay interval.
 ---
 
 #### `_menu_listen() -> list[str] | None`
-**Defined at**: line 346–391 (46 lines)
+**Defined at**: line 389–437 (49 lines)
 
 Listen mode submenu. Returns args list or None on cancel.
 
@@ -2245,49 +2509,49 @@ to simplify operational setup.
 ---
 
 #### `_menu_batch() -> list[str] | None`
-**Defined at**: line 394–419 (26 lines)
+**Defined at**: line 440–465 (26 lines)
 
 Batch mode submenu.
 
 ---
 
 #### `_menu_forward() -> list[str] | None`
-**Defined at**: line 422–440 (19 lines)
+**Defined at**: line 468–486 (19 lines)
 
 Forward mode submenu.
 
 ---
 
 #### `_menu_tunnel() -> list[str] | None`
-**Defined at**: line 443–476 (34 lines)
+**Defined at**: line 489–524 (36 lines)
 
 Tunnel mode submenu.
 
 ---
 
 #### `_menu_redirect() -> list[str] | None`
-**Defined at**: line 479–491 (13 lines)
+**Defined at**: line 527–539 (13 lines)
 
 Redirect mode submenu.
 
 ---
 
 #### `_menu_status() -> list[str] | None`
-**Defined at**: line 494–514 (21 lines)
+**Defined at**: line 542–562 (21 lines)
 
 Status mode submenu.
 
 ---
 
 #### `_menu_stop() -> list[str] | None`
-**Defined at**: line 517–548 (32 lines)
+**Defined at**: line 565–596 (32 lines)
 
 Stop mode submenu.
 
 ---
 
 #### `_menu_check_deps() -> None`
-**Defined at**: line 551–605 (55 lines)
+**Defined at**: line 599–653 (55 lines)
 
 Display dependency check results.
 
@@ -2298,7 +2562,7 @@ Display dependency check results.
 ---
 
 #### `_confirm_and_execute(args: list[str], dispatch_fn: object) -> None`
-**Defined at**: line 612–661 (50 lines)
+**Defined at**: line 660–709 (50 lines)
 
 Show the constructed command, confirm, and execute.
 
@@ -2321,7 +2585,7 @@ After executing a listener, offers to configure a paired forward.
 ---
 
 #### `_offer_paired_forward(listener_args: list[str]) -> None`
-**Defined at**: line 664–707 (44 lines)
+**Defined at**: line 712–755 (44 lines)
 
 Offer to configure a paired forward after a listener is launched.
 
@@ -2335,7 +2599,7 @@ simplify operational setup.
 ---
 
 #### `_menu_show_help() -> None`
-**Defined at**: line 714–798 (85 lines)
+**Defined at**: line 762–846 (85 lines)
 
 Display full help with narrative sections.
 
@@ -2346,7 +2610,7 @@ reliability features, logging paths, and CLI usage examples.
 ---
 
 #### `interactive_menu() -> None`
-**Defined at**: line 805–900 (96 lines)
+**Defined at**: line 853–948 (96 lines)
 
 Main interactive menu loop.
 
@@ -2359,7 +2623,7 @@ until the user exits (option 0).
 ## `modes/listen.py`
 
 **Path**: `src/socat_manager/modes/listen.py`  
-**Lines**: 269  
+**Lines**: 284  
 **Purpose**: Listen Mode Handler
 
 **Module docstring**: Listen mode handler — single TCP/UDP listener on a port.
@@ -2367,7 +2631,7 @@ until the user exits (option 0).
 ### Functions
 
 #### `mode_listen(args: Any) -> None`
-**Defined at**: line 60–256 (197 lines)
+**Defined at**: line 61–271 (211 lines)
 
 Execute listen mode: start a single TCP/UDP listener.
 
@@ -2410,7 +2674,7 @@ Create a capture log file with restrictive permissions (0o600).
 ## `modes/batch.py`
 
 **Path**: `src/socat_manager/modes/batch.py`  
-**Lines**: 272  
+**Lines**: 284  
 **Purpose**: Batch Mode Handler
 
 **Module docstring**: Batch mode handler — multiple listeners from port list, range, or config file.
@@ -2418,7 +2682,7 @@ Create a capture log file with restrictive permissions (0o600).
 ### Functions
 
 #### `mode_batch(args: Any) -> None`
-**Defined at**: line 54–263 (210 lines)
+**Defined at**: line 54–275 (222 lines)
 
 Execute batch mode: start multiple listeners.
 
@@ -2447,7 +2711,7 @@ Each port gets an independent session with its own session ID.
 ---
 
 #### `_create_capture_log(path: str) -> None`
-**Defined at**: line 266–272 (7 lines)
+**Defined at**: line 278–284 (7 lines)
 
 Create a capture log file with restrictive permissions (0o600).
 
@@ -2461,7 +2725,7 @@ Create a capture log file with restrictive permissions (0o600).
 ## `modes/forward.py`
 
 **Path**: `src/socat_manager/modes/forward.py`  
-**Lines**: 230  
+**Lines**: 247  
 **Purpose**: Forward Mode Handler
 
 **Module docstring**: Forward mode handler — bidirectional port forwarding.
@@ -2469,7 +2733,7 @@ Create a capture log file with restrictive permissions (0o600).
 ### Functions
 
 #### `mode_forward(args: Any) -> None`
-**Defined at**: line 53–221 (169 lines)
+**Defined at**: line 57–238 (182 lines)
 
 Execute forward mode: bidirectional port forwarding.
 
@@ -2491,7 +2755,7 @@ Execute forward mode: bidirectional port forwarding.
 ---
 
 #### `_create_capture_log(path: str) -> None`
-**Defined at**: line 224–230 (7 lines)
+**Defined at**: line 241–247 (7 lines)
 
 Create a capture log file with restrictive permissions (0o600).
 
@@ -2505,7 +2769,7 @@ Create a capture log file with restrictive permissions (0o600).
 ## `modes/tunnel.py`
 
 **Path**: `src/socat_manager/modes/tunnel.py`  
-**Lines**: 324  
+**Lines**: 339  
 **Purpose**: Tunnel Mode Handler
 
 **Module docstring**: Tunnel mode handler — TLS-encrypted tunnel via socat+OpenSSL.
@@ -2513,7 +2777,7 @@ Create a capture log file with restrictive permissions (0o600).
 ### Functions
 
 #### `mode_tunnel(args: Any) -> None`
-**Defined at**: line 62–315 (254 lines)
+**Defined at**: line 63–330 (268 lines)
 
 Execute tunnel mode: TLS-encrypted tunnel.
 
@@ -2561,7 +2825,7 @@ Create a capture log file with restrictive permissions (0o600).
 ## `modes/redirect.py`
 
 **Path**: `src/socat_manager/modes/redirect.py`  
-**Lines**: 215  
+**Lines**: 231  
 **Purpose**: Redirect Mode Handler
 
 **Module docstring**: Redirect mode handler — transparent port redirection.
@@ -2569,7 +2833,7 @@ Create a capture log file with restrictive permissions (0o600).
 ### Functions
 
 #### `mode_redirect(args: Any) -> None`
-**Defined at**: line 51–206 (156 lines)
+**Defined at**: line 55–222 (168 lines)
 
 Execute redirect mode: transparent port redirection.
 
@@ -2591,7 +2855,7 @@ Execute redirect mode: transparent port redirection.
 ---
 
 #### `_create_capture_log(path: str) -> None`
-**Defined at**: line 209–215 (7 lines)
+**Defined at**: line 225–231 (7 lines)
 
 Create a capture log file with restrictive permissions (0o600).
 
@@ -2697,6 +2961,30 @@ still running and logs warnings but does NOT kill them automatically
 **Security annotations**:
 
 - Uses subprocess.run with argument list (never shell=True)
+
+---
+
+
+## `modes/audit_view.py`
+
+**Path**: `src/socat_manager/modes/audit_view.py`  
+**Lines**: 127  
+**Purpose**: Read-only display handler for the `audit` subcommand
+
+**Module docstring**: Read-only display handler for the audit subcommand.
+
+**Architecture Role**: Dispatched from `__main__.dispatch_mode` for the `audit` subcommand. Renders `audit.query_events` / `audit.query_history` results as an aligned table or JSON, and applies `audit.prune` on `--prune`. Never modifies live sessions.
+
+### Functions
+
+#### `mode_audit(args: Any) -> None`
+**Defined at**: line 81–127 (47 lines)
+
+Handle the audit subcommand: prune, or query events/history and display as a table or JSON.
+
+**Parameters**:
+
+- args: Parsed argparse Namespace with the audit-mode attributes (session, event_type, since, limit, history, as_json, prune).
 
 ---
 
