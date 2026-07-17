@@ -1,6 +1,6 @@
 # Security Policy and Threat Analysis
 
-## Socat Network Operations Manager v0.9.0
+## Socat Network Operations Manager v1.0.1
 
 This document provides the complete security analysis for the Socat Network Operations Manager Python variant. It covers the security architecture, threat model, input validation matrix, attack surface analysis, secure coding practices, and vulnerability management process.
 
@@ -8,10 +8,27 @@ This document provides the complete security analysis for the Socat Network Oper
 
 ## 1. Vulnerability Reporting
 
+### Supported Versions
+
+Security fixes are applied to the current release series. During the pre-1.0
+phase, the latest `0.9.x` release is the supported line; fixes are delivered by
+advancing that line rather than by backporting to earlier pre-release builds.
+
+| Version | Supported |
+|---------|-----------|
+| Latest `0.9.x` | Yes — receives security fixes |
+| Earlier `0.9.x` | Upgrade to the latest `0.9.x` |
+| `< 0.9.0` (pre-release development builds) | No |
+
+Always run the most recent release. `socat-manager --version` reports the
+installed version.
+
 ### Reporting Process
 
 1. **Do NOT** open a public GitHub issue for security vulnerabilities
-2. Use the GitHub Security Advisory feature or contact the maintainer directly
+2. Report privately through a GitHub security advisory:
+   [Report a vulnerability](https://github.com/Sandler73/Socat-Network-Operations-Manager/security/advisories/new).
+   The advisory channel keeps the report confidential until a coordinated fix is released.
 3. Include: affected version, component, description, reproduction steps, impact assessment, and suggested severity (CVSS if possible)
 
 ### Response Timeline
@@ -50,7 +67,7 @@ The validation layer sits between user input and the command construction layer.
 
 **Layer 2 — Command Construction (Injection Prevention)**
 
-All socat commands are constructed as Python `list[str]` argument lists, never as shell strings. The `subprocess.Popen` call uses the argument list directly with `shell=False` (the default). The pattern `shell=True` does not appear anywhere in the 6,779-line codebase. `eval()`, `exec()`, `compile()`, and `__import__()` are similarly absent. This eliminates command injection, shell expansion, and arbitrary code execution as vulnerability classes.
+All socat commands are constructed as Python `list[str]` argument lists, never as shell strings. The `subprocess.Popen` call uses the argument list directly with `shell=False` (the default). The pattern `shell=True` does not appear anywhere in the 8,761-line codebase. `eval()`, `exec()`, `compile()`, and `__import__()` are similarly absent. This eliminates command injection, shell expansion, and arbitrary code execution as vulnerability classes.
 
 The command builders in `commands.py` are the only place where socat command strings are assembled. They perform no validation (trusting the input has been sanitized by Layer 1) and produce no side effects — they are pure functions that transform validated parameters into argument lists.
 
@@ -74,6 +91,8 @@ All security-sensitive files are created with restrictive permissions set explic
 | Certificate directory | Owner only | 0o700 | Contains private keys |
 | Private keys (.pem) | Owner read/write | 0o600 | Cryptographic material |
 | Capture logs | Owner read/write | 0o600 | Contain intercepted traffic |
+| Audit directory | Owner only | 0o700 | Contains the audit database |
+| Audit database (.db) | Owner read/write | 0o600 | Records operational history (endpoints, commands) |
 | Lock files | Owner read/write | 0o600 | Prevent manipulation |
 
 **Layer 5 — Protocol Scoping (Operational Isolation)**
@@ -90,6 +109,16 @@ Session field reading uses exact-key matching via `line.split("=", 1)` where the
 - Searching for `PID` will NOT match `LAUNCHER_PID=67890` (the key is `LAUNCHER_PID`, not `PID`)
 - Searching for `PORT` will NOT match `LOCAL_PORT=8080` (different exact key)
 - First occurrence wins: if a file contains `PID=111\nPID=222`, only `111` is returned
+
+**Layer 7 — Audit Store (After-Action Record)**
+
+The SQLite audit store records session launches, stops, watchdog restarts, and crashes. Its security properties:
+- **Contents.** Events include remote endpoints, local ports, PIDs/PGIDs, and the constructed socat command. This is operational data the operator already owns; it is written only to the operator's own host.
+- **Permissions.** The `audit/` directory is `0o700` and the database `0o600` — same-owner-only, mirroring the session and log directories.
+- **Redaction.** `SOCAT_MANAGER_AUDIT_REDACT=1` masks the remote host in both the `rhost` column and the recorded command with a `HOST-REDACTED` token. Private key material is never recorded (only key paths).
+- **SQL safety.** All queries bind values with `?` placeholders; the only dynamically assembled SQL fragments are hardcoded column and clause strings. There is no user-controlled string interpolation into SQL.
+- **Opt-out.** Auditing is on by default and can be disabled per-invocation with `--no-audit` or globally with `SOCAT_MANAGER_AUDIT=0`.
+- **Non-interference.** Every audit operation is failure-isolated: a database error is logged and swallowed, so auditing can never break or alter an operation.
 
 This is a deliberate security control against an attack where an adversary appends crafted lines to a session file (e.g., via a symlink or race condition) to confuse the stop sequence into killing wrong processes.
 
