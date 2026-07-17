@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# FILE        : tests/stubs/openssl
+# ==============================================================================
+# Synopsis    : Mock openssl binary for testing
+# Description : Simulates openssl certificate generation for tunnel mode tests.
+#               Writes placeholder PEM cert and key files at the paths given by
+#               -out and -keyout, mirroring `openssl req -x509` just enough for
+#               the tunnel-mode tests to proceed without real OpenSSL.
+# Notes       : Recognizes -out and -keyout; ignores all other arguments.
+# Version     : 1.0.1
+# ==============================================================================
+
+"""Mock openssl stub for testing."""
+
+import sys
+
+
+def main():
+    """Simulate openssl req -x509 certificate generation."""
+    args = sys.argv[1:]
+
+    # Parse -keyout and -out arguments
+    keyout = ""
+    certout = ""
+
+    i = 0
+    while i < len(args):
+        if args[i] == "-keyout" and i + 1 < len(args):
+            keyout = args[i + 1]
+            i += 2
+        elif args[i] == "-out" and i + 1 < len(args):
+            certout = args[i + 1]
+            i += 2
+        else:
+            i += 1
+
+    # Write dummy cert and key files
+    if certout:
+        with open(certout, "w") as f:
+            f.write("-----BEGIN CERTIFICATE-----\nMOCK_CERT_DATA\n-----END CERTIFICATE-----\n")
+
+    if keyout:
+        with open(keyout, "w") as f:
+            f.write("-----BEGIN PRIVATE KEY-----\nMOCK_KEY_DATA\n-----END PRIVATE KEY-----\n")
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

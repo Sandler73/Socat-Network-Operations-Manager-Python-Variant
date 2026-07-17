@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# FILE        : tests/stubs/ss
+# ==============================================================================
+# Synopsis    : Mock ss binary for testing
+# Description : Simulates ss output for port availability checks.
+#               Returns a header-only (no listeners) line by default.
+# Notes       : Set SS_MOCK_OUTPUT to inject listener rows so a test can
+#               exercise the port-in-use path.
+# Version     : 1.0.1
+# ==============================================================================
+
+"""Mock ss stub for testing."""
+
+import sys
+
+
+def main():
+    """Simulate ss output."""
+    # Default: no listeners found (empty output)
+    # Tests can set SS_MOCK_OUTPUT env var to control output
+    import os
+    mock_output = os.environ.get("SS_MOCK_OUTPUT", "")
+    if mock_output:
+        print(mock_output)
+    else:
+        print("State  Recv-Q  Send-Q   Local Address:Port   Peer Address:Port")
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
