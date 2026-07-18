@@ -8,7 +8,7 @@
 #               line. Use with:
 #               socat-manager batch --file web-services.conf.example
 # Notes       : Ports below 1024 require root/sudo to bind.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 # Standard web (require root)
