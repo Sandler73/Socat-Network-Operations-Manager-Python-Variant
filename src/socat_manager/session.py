@@ -16,7 +16,7 @@
 #
 # Notes       : - Session files use KEY=VALUE format interoperable with bash
 #               - Field reading uses str.split('=', 1) for exact key match
-#                 (not regex, not 'in' substring — SEC-01 / CWE-20)
+#                 (not regex, not 'in' substring -- SEC-01 / CWE-20)
 #               - Advisory locking is cooperative (other processes must also
 #                 use flock for protection to be effective)
 #               - Session directory permissions: 0o700
@@ -117,7 +117,7 @@ def session_lock() -> Generator[None, None, None]:
     The lock is automatically released when the context manager exits.
 
     Yields:
-        None — the lock is held for the duration of the with block.
+        None -- the lock is held for the duration of the with block.
 
     Raises:
         OSError: If the lock file cannot be opened or locked.
@@ -132,13 +132,13 @@ def session_lock() -> Generator[None, None, None]:
         yield
     except BlockingIOError:
         log_debug("Session directory locked by another process", "session")
-        # Still yield — advisory lock is best-effort, not blocking
+        # Still yield -- advisory lock is best-effort, not blocking
         yield
     finally:
         try:
             fcntl.flock(fd, fcntl.LOCK_UN)
         except OSError:
-            pass
+            pass  # the lock is already released or the fd is no longer valid; the fd is closed next regardless
         os.close(fd)
 
 
@@ -165,7 +165,7 @@ def session_register(
     full metadata. File permissions are set to 0o600 to
     protect command strings and PID information.
 
-    The file format is interoperable with the bash version — a user
+    The file format is interoperable with the bash version -- a user
     can manage sessions created by either variant interchangeably.
 
     Args:
@@ -233,7 +233,7 @@ def session_register(
         try:
             os.close(fd)
         except OSError:
-            pass
+            pass  # fdopen already consumed the descriptor, so there is nothing left to close
         raise
 
     log_debug(
@@ -260,8 +260,8 @@ def session_update_process(sid: str, pid: int, pgid: int) -> bool:
     launcher PID, and the STARTED creation timestamp) and the file header.
 
     This is the durable record of which process a session currently owns.
-    Any component that replaces the process behind a session — such as the
-    watchdog after an unexpected exit — must call this so that liveness
+    Any component that replaces the process behind a session -- such as the
+    watchdog after an unexpected exit -- must call this so that liveness
     checks and the stop sequence act on the process that is actually
     running rather than a terminated predecessor.
 
@@ -290,7 +290,7 @@ def session_update_process(sid: str, pid: int, pgid: int) -> bool:
     with session_lock():
         if not session_file.is_file():
             log_warning(
-                f"Cannot update process identity — session file missing: {sid}",
+                f"Cannot update process identity -- session file missing: {sid}",
                 "session",
             )
             return False
@@ -353,7 +353,7 @@ def session_update_process(sid: str, pid: int, pgid: int) -> bool:
             try:
                 tmp_file.unlink(missing_ok=True)
             except OSError:
-                pass
+                pass  # the temporary file is already gone; the write failure itself is reported above
             return False
 
     log_debug(f"Session process identity updated: {sid} (PID {pid}, PGID {pgid})", "session")
@@ -371,9 +371,9 @@ def session_unregister(sid: str) -> None:
     """Remove a session file and all associated signal files.
 
     Called after confirmed process termination. Removes:
-        - {sid}.session  — session metadata
-        - {sid}.stop     — stop signal file
-        - {sid}.launching — PID staging file
+        - {sid}.session  -- session metadata
+        - {sid}.stop     -- stop signal file
+        - {sid}.launching -- PID staging file
 
     Args:
         sid: Session ID to unregister.
@@ -385,7 +385,7 @@ def session_unregister(sid: str) -> None:
         try:
             target.unlink(missing_ok=True)
         except OSError:
-            pass
+            pass  # the artifact is already removed or not writable; unregistering is best-effort
 
     log_debug(f"Session unregistered: {sid}", "session")
     log_session(sid, "INFO", "Session unregistered")
@@ -428,19 +428,19 @@ def session_read_field(session_file: Path, field: str) -> str:
                 if not line or line.startswith("#"):
                     continue
 
-                # Split on first '=' only — key is everything before,
+                # Split on first '=' only -- key is everything before,
                 # value is everything after (may contain '=' characters)
                 if "=" not in line:
                     continue
 
                 key, value = line.split("=", 1)
 
-                # EXACT key match — not startswith, not 'in', not regex
+                # EXACT key match -- not startswith, not 'in', not regex
                 if key == field:
                     return value
 
     except OSError:
-        pass
+        pass  # the session file is unreadable or was removed concurrently; treat the field as absent
 
     return ""
 
@@ -585,7 +585,7 @@ def process_alive(pid_str: str, pgid_str: str) -> bool:
             if process_is_running(int(pid_str)):
                 return True
         except ValueError:
-            pass
+            pass  # the PID field is not an integer; fall through to the process-group check below
 
     # Fallback: check if any process in the group is alive
     if pgid_str and pgid_str != "0":
@@ -593,7 +593,7 @@ def process_alive(pid_str: str, pgid_str: str) -> bool:
             os.killpg(int(pgid_str), 0)
             return True
         except (OSError, ValueError):
-            pass
+            pass  # the PGID is missing, invalid, or its group is gone; the session is not alive
 
     return False
 
@@ -682,7 +682,7 @@ def session_list() -> bool:
     for sf in sorted(paths.session_dir.glob("*.session")):
         has_sessions = True
 
-        # Single-pass bulk read (eliminates N+1 I/O — was 9 reads per session)
+        # Single-pass bulk read (eliminates N+1 I/O -- was 9 reads per session)
         fields: dict[str, str] = session_read_all_fields(sf)
 
         sid: str = fields.get(SESSION_FIELDS.session_id, "")
@@ -773,7 +773,7 @@ def session_read_all_fields(session_file: Path) -> dict[str, str]:
                 if key not in fields:
                     fields[key] = value
     except OSError:
-        pass
+        pass  # the session file is unreadable or was removed concurrently; return what parsed so far
 
     return fields
 
@@ -823,7 +823,7 @@ def session_detail(sid: str) -> bool:
     corr: str = fields.get(SESSION_FIELDS.correlation, "")
     launcher: str = fields.get(SESSION_FIELDS.launcher_pid, "")
 
-    # Liveness from the fields already read above — no second file read.
+    # Liveness from the fields already read above -- no second file read.
     alive: bool = process_alive(pid, pgid)
 
     # --- Section 1: Session Metadata ---
@@ -889,7 +889,7 @@ def session_detail(sid: str) -> bool:
                             for line in result.stdout.strip().splitlines():
                                 print(f"    {line}", file=sys.stderr)
                     except (FileNotFoundError, _sp.TimeoutExpired, OSError):
-                        pass
+                        pass  # ps is absent or timed out; the extra diagnostic detail is simply omitted
     else:
         if USE_COLOR:
             print(f"  {COLORS.red}[{SYMBOLS.fail}] Process is DEAD{COLORS.reset}", file=sys.stderr)
@@ -901,7 +901,7 @@ def session_detail(sid: str) -> bool:
     print_section("Port Status")
 
     if lport and lport != "0":
-        # The listing is scoped to the session's own protocol — its transport
+        # The listing is scoped to the session's own protocol -- its transport
         # and its address family. A tcp4 session is reported against the tcp4
         # socket only, so a listener of another protocol on the same port
         # number is never mistaken for this session's listener.
@@ -1023,7 +1023,7 @@ def migrate_legacy_sessions() -> int:
             try:
                 old_file.unlink(missing_ok=True)
             except OSError:
-                pass
+                pass  # the legacy session file is already gone
             log_debug(f"Removed invalid legacy session: {old_name}", "migrate")
             continue
 
@@ -1031,11 +1031,11 @@ def migrate_legacy_sessions() -> int:
         try:
             os.kill(pid_int, 0)
         except OSError:
-            # Process is dead — remove legacy file
+            # Process is dead -- remove legacy file
             try:
                 old_file.unlink(missing_ok=True)
             except OSError:
-                pass
+                pass  # the legacy session file is already gone
             log_debug(f"Removed dead legacy session: {old_name}", "migrate")
             continue
 
@@ -1052,7 +1052,7 @@ def migrate_legacy_sessions() -> int:
             if result.returncode == 0 and result.stdout.strip().isdigit():
                 pgid_int = int(result.stdout.strip())
         except (FileNotFoundError, _sp.TimeoutExpired, ValueError):
-            pass
+            pass  # ps is absent, timed out, or returned non-numeric output; the PGID stays unset
 
         # Create v2.3 session file
         session_register(
@@ -1071,7 +1071,7 @@ def migrate_legacy_sessions() -> int:
         try:
             old_file.unlink(missing_ok=True)
         except OSError:
-            pass
+            pass  # the legacy session file is already gone after migration
 
         migrated += 1
         log_info(f"Migrated legacy session '{old_name}' -> SID {sid}", "migrate")
