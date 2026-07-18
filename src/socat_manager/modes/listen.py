@@ -1,7 +1,7 @@
 # ==============================================================================
 # MODULE      : socat_manager/modes/listen.py
 # ==============================================================================
-# Synopsis    : Listen mode handler — single TCP/UDP listener
+# Synopsis    : Listen mode handler -- single TCP/UDP listener
 # Description : Starts a single listener on a specified port with options for
 #               protocol selection, dual-stack, traffic capture, and watchdog
 #               auto-restart. Exact parity with bash mode_listen() (lines 1772-1887).
@@ -14,7 +14,7 @@
 # Version     : 1.0.2
 # ==============================================================================
 
-"""Listen mode handler — single TCP/UDP listener on a port."""
+"""Listen mode handler -- single TCP/UDP listener on a port."""
 
 from __future__ import annotations
 
@@ -264,7 +264,7 @@ def mode_listen(args: Any) -> None:
                     log_warning(f"Dual-stack {alt_proto} listener failed on port {port}")
             else:
                 log_warning(
-                    f"Port {port} ({alt_proto}) already in use — skipping dual-stack"
+                    f"Port {port} ({alt_proto}) already in use -- skipping dual-stack"
                 )
 
     log_info(f"Data captured to: {logfile}")
@@ -281,4 +281,4 @@ def _create_capture_log(path: str) -> None:
         fd: int = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         os.close(fd)
     except OSError:
-        pass
+        pass  # pre-creating the capture log is best-effort; socat creates it if absent
