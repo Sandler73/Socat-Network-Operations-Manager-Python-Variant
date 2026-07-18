@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.1-blue?style=flat-square" alt="Version 1.0.1">
+  <img src="https://img.shields.io/badge/version-1.0.2-blue?style=flat-square" alt="Version 1.0.2">
   <img src="https://img.shields.io/badge/python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/platform-linux-FCC624?style=flat-square&logo=linux&logoColor=black" alt="Linux">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License">
@@ -22,8 +22,6 @@
   <img src="https://img.shields.io/badge/ruff-passing-7B68EE?style=flat-square&logo=python&logoColor=white" alt="Ruff">
   <img src="https://img.shields.io/badge/pytest-757%20tests-blue?style=flat-square" alt="757 Tests">
   <img src="https://img.shields.io/badge/coverage-68%25-yellow?style=flat-square" alt="Coverage">
-  <img src="https://img.shields.io/badge/mypy-strict%20passing-7B68EE?style=flat-square" alt="mypy strict">
-  <img src="https://img.shields.io/badge/CI-passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white" alt="CI Tests">
   <img src="https://img.shields.io/badge/dependencies-0%20runtime-brightgreen?style=flat-square" alt="Zero Dependencies">
 </p>
 
