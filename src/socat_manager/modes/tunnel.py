@@ -1,7 +1,7 @@
 # ==============================================================================
 # MODULE      : socat_manager/modes/tunnel.py
 # ==============================================================================
-# Synopsis    : Tunnel mode handler — TLS-encrypted tunnel via socat+OpenSSL
+# Synopsis    : Tunnel mode handler -- TLS-encrypted tunnel via socat+OpenSSL
 # Description : Accepts TLS connections on a local port and forwards plaintext
 #               traffic to a remote target. Auto-generates self-signed certs if
 #               none provided. TCP only (rejects UDP with guidance). Dual-stack
@@ -19,7 +19,7 @@
 # Version     : 1.0.2
 # ==============================================================================
 
-"""Tunnel mode handler — TLS-encrypted tunnel via socat+OpenSSL."""
+"""Tunnel mode handler -- TLS-encrypted tunnel via socat+OpenSSL."""
 
 from __future__ import annotations
 
@@ -120,7 +120,7 @@ def mode_tunnel(args: Any) -> None:
     wd_backoff: int = getattr(args, 'backoff', None) or 1
     dual_stack: bool = bool(args.dual_stack)
     cn: str = args.cn or "localhost"
-    # Validate CN — it flows into openssl -subj "/CN=..." argument.
+    # Validate CN -- it flows into openssl -subj "/CN=..." argument.
     # Although subprocess argument list prevents shell injection,
     # special characters could break openssl's X.509 subject parsing.
     # Reuse session_name validator (alphanumeric, dots, hyphens, underscores).
@@ -148,7 +148,7 @@ def mode_tunnel(args: Any) -> None:
     cert: str = args.cert or ""
     key: str = args.key or ""
 
-    # Warn if only one of cert/key is provided — the other would be auto-generated
+    # Warn if only one of cert/key is provided -- the other would be auto-generated
     # which means the provided file is effectively ignored
     if cert and not key:
         log_warning(
@@ -324,7 +324,7 @@ def mode_tunnel(args: Any) -> None:
             except RuntimeError:
                 log_warning(f"Dual-stack UDP forwarder failed on port {lport}")
         else:
-            log_warning(f"Port {lport} (udp4) already in use — skipping dual-stack")
+            log_warning(f"Port {lport} (udp4) already in use -- skipping dual-stack")
 
     log_info(f"Connect with: socat - OPENSSL:localhost:{lport},verify=0")
     log_info(f"Stop with: socat-manager stop {primary_sid}")
@@ -336,4 +336,4 @@ def _create_capture_log(path: str) -> None:
         fd: int = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         os.close(fd)
     except OSError:
-        pass
+        pass  # pre-creating the capture log is best-effort; socat creates it if absent
