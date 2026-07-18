@@ -25,6 +25,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/ruff-passing-7B68EE?style=flat-square&logo=python&logoColor=white" alt="Ruff">
   <img src="https://img.shields.io/badge/pytest-757%20tests-blue?style=flat-square" alt="757 Tests">
+  <a href="https://github.com/Sandler73/Socat-Network-Operations-Manager-Python-Variant/actions/workflows/codeql.yml"><img src="https://github.com/Sandler73/Socat-Network-Operations-Manager-Python-Variant/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL"></a>
   <img src="https://img.shields.io/badge/coverage-68%25-yellow?style=flat-square" alt="Coverage">
   <img src="https://img.shields.io/badge/dependencies-0%20runtime-brightgreen?style=flat-square" alt="Zero Dependencies">
 </p>
