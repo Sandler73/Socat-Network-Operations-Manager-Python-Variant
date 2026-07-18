@@ -16,7 +16,7 @@
 #               session-<sid>-error.log, and capture-*.log, all matched by the
 #               glob below. copytruncate is used because a new master log is
 #               opened per invocation and long-lived writers may hold a handle.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 # CHANGE-ME: point this at your runtime logs directory.
