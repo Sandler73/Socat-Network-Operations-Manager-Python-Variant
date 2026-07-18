@@ -1,5 +1,5 @@
 #======================================================================
-# Makefile - Socat Network Operations Manager (Python Variant)
+# Makefile — Socat Network Operations Manager (Python Variant)
 #======================================================================
 #
 # Synopsis   : Build, test, lint, install, and package socat-manager.
