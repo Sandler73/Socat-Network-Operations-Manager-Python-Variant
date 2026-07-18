@@ -46,7 +46,7 @@
 #   python3 socat-manager.py stop --all
 #   python3 socat-manager.py audit --history
 #   SOCAT_MANAGER_BASE=/var/lib/socat-mgr python3 socat-manager.py status
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 """Standalone launcher for socat-manager — no pip install required."""
