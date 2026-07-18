@@ -1,6 +1,6 @@
 # Developer Guide — Exhaustive Code Reference
 
-## Socat Network Operations Manager (Python Variant) v1.0.1
+## Socat Network Operations Manager (Python Variant) v1.0.2
 
 This document provides an exhaustive reference for every source module, every class, every function, every constant, and every significant variable in the framework. It is generated from actual source code inspection and documents real behavior, security properties, cross-references, and wiring details.
 
@@ -40,7 +40,7 @@ This document provides an exhaustive reference for every source module, every cl
 
 ### Constants and Module-Level Variables
 
-- **`__version__`** `str` = `'1.0.1'` (line 19)
+- **`__version__`** `str` = `'1.0.2'` (line 19)
 - **`__author__`** `str` = `'Sandler73'` (line 20)
 - **`__project__`** `str` = `'Socat Network Operations Manager'` (line 21)
 
@@ -69,7 +69,7 @@ This document provides an exhaustive reference for every source module, every cl
 ### Constants and Module-Level Variables
 
 - **`SCRIPT_NAME`** `Final[str]` = `'socat-manager'` (line 45)
-- **`SCRIPT_VERSION`** `Final[str]` = `'1.0.1'` (line 46)
+- **`SCRIPT_VERSION`** `Final[str]` = `'1.0.2'` (line 46)
 - **`DEFAULTS`** `Final[Defaults]` = `Defaults()` (line 174)
 - **`EXEC_TIMESTAMP`** `Final[str]` = `_generate_exec_timestamp()` (line 215)
 - **`CORRELATION_ID`** `Final[str]` = `_generate_correlation_id()` (line 216)
