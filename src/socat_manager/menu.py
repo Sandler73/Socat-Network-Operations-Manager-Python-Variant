@@ -196,7 +196,7 @@ def _prompt_protocol(text: str = "Protocol", default: str = "tcp4") -> str:
 
 
 def _prompt_name(text: str = "Session name", default: str = "") -> str:
-    """Prompt for a validated session name (optional — empty returns default)."""
+    """Prompt for a validated session name (optional -- empty returns default)."""
     value: str = _prompt(text, default)
     if not value:
         return default
@@ -245,9 +245,9 @@ def _cancel_hint() -> None:
 def _cancelled() -> None:
     """Print the cancelled message."""
     if USE_COLOR:
-        print(f"\n  {COLORS.yellow}Cancelled — returning to menu.{COLORS.reset}\n", file=sys.stderr)
+        print(f"\n  {COLORS.yellow}Cancelled -- returning to menu.{COLORS.reset}\n", file=sys.stderr)
     else:
-        print("\n  Cancelled — returning to menu.\n", file=sys.stderr)
+        print("\n  Cancelled -- returning to menu.\n", file=sys.stderr)
 
 
 def _pause() -> None:
@@ -255,7 +255,7 @@ def _pause() -> None:
     try:
         input("\n  Press Enter to continue...")
     except (EOFError, KeyboardInterrupt):
-        pass
+        pass  # end of input or interrupt at the pause prompt simply returns to the menu
 
 
 def _menu_banner() -> None:
@@ -392,7 +392,7 @@ def _menu_listen() -> list[str] | None:
     After listener configuration, offers to configure a paired forward
     to simplify operational setup.
     """
-    _menu_header("Listen Mode — Single TCP/UDP Listener")
+    _menu_header("Listen Mode -- Single TCP/UDP Listener")
     _cancel_hint()
 
     port: int = _prompt_port("Listen port")
@@ -415,14 +415,14 @@ def _menu_listen() -> list[str] | None:
             d = COLORS.dim
             r = COLORS.reset
             print(f"  {d}Examples:{r}", file=sys.stderr)
-            print(f"  {d}  reuseaddr,fork       — reuse port, fork per connection{r}", file=sys.stderr)
-            print(f"  {d}  bind=10.0.0.1        — bind to specific interface{r}", file=sys.stderr)
-            print(f"  {d}  keepalive,nodelay     — enable TCP keepalive + no-delay{r}", file=sys.stderr)
+            print(f"  {d}  reuseaddr,fork       -- reuse port, fork per connection{r}", file=sys.stderr)
+            print(f"  {d}  bind=10.0.0.1        -- bind to specific interface{r}", file=sys.stderr)
+            print(f"  {d}  keepalive,nodelay     -- enable TCP keepalive + no-delay{r}", file=sys.stderr)
         else:
             print("  Examples:", file=sys.stderr)
-            print("    reuseaddr,fork       — reuse port, fork per connection", file=sys.stderr)
-            print("    bind=10.0.0.1        — bind to specific interface", file=sys.stderr)
-            print("    keepalive,nodelay     — enable TCP keepalive + no-delay", file=sys.stderr)
+            print("    reuseaddr,fork       -- reuse port, fork per connection", file=sys.stderr)
+            print("    bind=10.0.0.1        -- bind to specific interface", file=sys.stderr)
+            print("    keepalive,nodelay     -- enable TCP keepalive + no-delay", file=sys.stderr)
         print("", file=sys.stderr)
 
         while True:
@@ -439,7 +439,7 @@ def _menu_listen() -> list[str] | None:
 
 def _menu_batch() -> list[str] | None:
     """Batch mode submenu."""
-    _menu_header("Batch Mode — Multiple Listeners")
+    _menu_header("Batch Mode -- Multiple Listeners")
     _cancel_hint()
 
     print("  Port source:", file=sys.stderr)
@@ -467,7 +467,7 @@ def _menu_batch() -> list[str] | None:
 
 def _menu_forward() -> list[str] | None:
     """Forward mode submenu."""
-    _menu_header("Forward Mode — Bidirectional Relay")
+    _menu_header("Forward Mode -- Bidirectional Relay")
     _cancel_hint()
 
     lport: int = _prompt_port("Local port")
@@ -488,7 +488,7 @@ def _menu_forward() -> list[str] | None:
 
 def _menu_tunnel() -> list[str] | None:
     """Tunnel mode submenu."""
-    _menu_header("Tunnel Mode — TLS Encrypted Tunnel")
+    _menu_header("Tunnel Mode -- TLS Encrypted Tunnel")
     _cancel_hint()
 
     lport: int = _prompt_port("Local TLS port")
@@ -526,7 +526,7 @@ def _menu_tunnel() -> list[str] | None:
 
 def _menu_redirect() -> list[str] | None:
     """Redirect mode submenu."""
-    _menu_header("Redirect Mode — Transparent Redirection")
+    _menu_header("Redirect Mode -- Transparent Redirection")
     _cancel_hint()
 
     lport: int = _prompt_port("Local port")
@@ -621,7 +621,7 @@ def _menu_check_deps() -> None:
                     if result.stdout.strip():
                         version = result.stdout.strip().splitlines()[0]
             except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-                pass
+                pass  # the tool version probe failed; the resolved path is still reported without a version
 
             status_str: str = f"✓ {path}"
             if version:
@@ -632,9 +632,9 @@ def _menu_check_deps() -> None:
                 print(f"    {status_str}", file=sys.stderr)
         else:
             if USE_COLOR:
-                print(f"    {COLORS.red}✗ {cmd_name} — NOT FOUND{COLORS.reset}", file=sys.stderr)
+                print(f"    {COLORS.red}✗ {cmd_name} -- NOT FOUND{COLORS.reset}", file=sys.stderr)
             else:
-                print(f"    ✗ {cmd_name} — NOT FOUND", file=sys.stderr)
+                print(f"    ✗ {cmd_name} -- NOT FOUND", file=sys.stderr)
 
     print("\n  Optional:", file=sys.stderr)
     for cmd_name in OPTIONAL_COMMANDS:
@@ -689,7 +689,7 @@ def _confirm_and_execute(args: list[str], dispatch_fn: object) -> None:
         try:
             dispatch_mode(parsed)
         except SystemExit:
-            # Mode handler called sys.exit() on error — catch and return to menu
+            # Mode handler called sys.exit() on error -- catch and return to menu
             pass
         except KeyboardInterrupt:
             print("", file=sys.stderr)
@@ -768,7 +768,7 @@ def _menu_show_help() -> None:
     """
     from socat_manager import __version__
 
-    _menu_header("Socat Network Operations Manager — Help")
+    _menu_header("Socat Network Operations Manager -- Help")
 
     help_text: str = f"""
   VERSION
@@ -796,7 +796,7 @@ def _menu_show_help() -> None:
 
     Processes are launched in isolated process groups (via setsid) for
     reliable cross-invocation tracking. The management script returns
-    to the prompt immediately after launching — sessions persist in
+    to the prompt immediately after launching -- sessions persist in
     the background.
 
   PROTOCOL SELECTION
@@ -866,11 +866,11 @@ def interactive_menu() -> None:
             c, r = COLORS.cyan, COLORS.reset
             b = COLORS.bold
             print(f"  {b}Operational Modes:{r}", file=sys.stderr)
-            print(f"    {c}1){r}  Listen     — Start a TCP/UDP listener", file=sys.stderr)
-            print(f"    {c}2){r}  Batch      — Launch multiple listeners", file=sys.stderr)
-            print(f"    {c}3){r}  Forward    — Relay traffic to a remote host", file=sys.stderr)
-            print(f"    {c}4){r}  Tunnel     — Create a TLS-encrypted tunnel", file=sys.stderr)
-            print(f"    {c}5){r}  Redirect   — Transparent port redirection", file=sys.stderr)
+            print(f"    {c}1){r}  Listen     -- Start a TCP/UDP listener", file=sys.stderr)
+            print(f"    {c}2){r}  Batch      -- Launch multiple listeners", file=sys.stderr)
+            print(f"    {c}3){r}  Forward    -- Relay traffic to a remote host", file=sys.stderr)
+            print(f"    {c}4){r}  Tunnel     -- Create a TLS-encrypted tunnel", file=sys.stderr)
+            print(f"    {c}5){r}  Redirect   -- Transparent port redirection", file=sys.stderr)
             print("", file=sys.stderr)
             print(f"  {b}Status & Management:{r}", file=sys.stderr)
             print(f"    {c}6){r}  Session Status", file=sys.stderr)
@@ -882,11 +882,11 @@ def interactive_menu() -> None:
             print(f"    {c}0){r}  Exit", file=sys.stderr)
         else:
             print("  Operational Modes:", file=sys.stderr)
-            print("    1)  Listen     — Start a TCP/UDP listener", file=sys.stderr)
-            print("    2)  Batch      — Launch multiple listeners", file=sys.stderr)
-            print("    3)  Forward    — Relay traffic to a remote host", file=sys.stderr)
-            print("    4)  Tunnel     — Create a TLS-encrypted tunnel", file=sys.stderr)
-            print("    5)  Redirect   — Transparent port redirection", file=sys.stderr)
+            print("    1)  Listen     -- Start a TCP/UDP listener", file=sys.stderr)
+            print("    2)  Batch      -- Launch multiple listeners", file=sys.stderr)
+            print("    3)  Forward    -- Relay traffic to a remote host", file=sys.stderr)
+            print("    4)  Tunnel     -- Create a TLS-encrypted tunnel", file=sys.stderr)
+            print("    5)  Redirect   -- Transparent port redirection", file=sys.stderr)
             print("", file=sys.stderr)
             print("  Status & Management:", file=sys.stderr)
             print("    6)  Session Status", file=sys.stderr)
@@ -902,7 +902,7 @@ def interactive_menu() -> None:
         except _MenuCancel:
             continue
         except (KeyboardInterrupt, EOFError):
-            # Ctrl+C or Ctrl+D at main menu prompt — exit gracefully
+            # Ctrl+C or Ctrl+D at main menu prompt -- exit gracefully
             if USE_COLOR:
                 print(f"\n\n  {COLORS.dim}Goodbye.{COLORS.reset}\n", file=sys.stderr)
             else:
@@ -944,5 +944,5 @@ def interactive_menu() -> None:
             except _MenuCancel:
                 _cancelled()
             except KeyboardInterrupt:
-                # Ctrl+C during submenu or execution — return to menu
+                # Ctrl+C during submenu or execution -- return to menu
                 print("", file=sys.stderr)
