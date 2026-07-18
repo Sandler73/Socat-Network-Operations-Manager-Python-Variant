@@ -10,7 +10,7 @@
 #               MONITORS the existing PID and only launches new processes
 #               on restart after confirmed death.
 #
-#               Bash equivalent: watchdog_loop() — lines 1703-1756
+#               Bash equivalent: watchdog_loop() -- lines 1703-1756
 #
 #               Behavior:
 #                 1. Monitor existing process (initial_pid) via
@@ -44,7 +44,7 @@
 """Watchdog auto-restart monitor for socat sessions.
 
 Monitors an already-running process and re-launches on unexpected death.
-Does NOT launch the initial process — that is done by launch_socat_session().
+Does NOT launch the initial process -- that is done by launch_socat_session().
 """
 
 from __future__ import annotations
@@ -95,7 +95,7 @@ def watchdog_loop(
     sequence aligned with the process that currently owns the port.
 
     The .stop signal file tells the watchdog "this was a deliberate
-    stop — do NOT restart."
+    stop -- do NOT restart."
 
     Args:
         session_id: Session ID being monitored.
@@ -167,7 +167,7 @@ def watchdog_loop(
         )
 
         if pid <= 0:
-            # Launch failed — exit watchdog
+            # Launch failed -- exit watchdog
             break
 
         # Rewrite the session record to point at the replacement process.
@@ -309,7 +309,7 @@ def _launch_replacement(
 
     # Retain the handle so the replacement's exit status can be collected when
     # it terminates. An uncollected child remains a zombie, and a zombie still
-    # answers signal 0 — death would never be observed and the watchdog would
+    # answers signal 0 -- death would never be observed and the watchdog would
     # stop restarting.
     register_child(process)
 
@@ -323,7 +323,7 @@ def _launch_replacement(
 
 
 def _handle_stop_signal(stop_file: Path, session_id: str, session_name: str) -> None:
-    """Handle a .stop signal file — graceful watchdog exit.
+    """Handle a .stop signal file -- graceful watchdog exit.
 
     Args:
         stop_file: Path to the .stop signal file.
@@ -333,7 +333,7 @@ def _handle_stop_signal(stop_file: Path, session_id: str, session_name: str) -> 
     try:
         stop_file.unlink(missing_ok=True)
     except OSError:
-        pass
+        pass  # the stop file is already removed; the watchdog is exiting either way
 
     log_info(
         f"Watchdog: graceful stop requested for '{session_name}' [{session_id}]",
