@@ -23,7 +23,7 @@
 #               protect real traffic. Generate a fresh pair per deployment with
 #               the built-in tunnel-mode generator or with openssl directly.
 # Execution   : ./generate-example-cert.sh
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 set -euo pipefail
