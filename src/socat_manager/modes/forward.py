@@ -1,7 +1,7 @@
 # ==============================================================================
 # MODULE      : socat_manager/modes/forward.py
 # ==============================================================================
-# Synopsis    : Forward mode handler — bidirectional port forwarding
+# Synopsis    : Forward mode handler -- bidirectional port forwarding
 # Description : Creates a full-duplex proxy between a local listener and a
 #               remote target. Supports protocol selection, dual-stack,
 #               cross-protocol forwarding (--remote-proto), traffic capture,
@@ -9,7 +9,7 @@
 #               Exact parity with bash mode_forward() (lines 2071-2190).
 #
 #
-#               - Bidirectional (no -u flag) — full-duplex relay
+#               - Bidirectional (no -u flag) -- full-duplex relay
 #               - Cross-protocol via --remote-proto (tcp→udp or reverse)
 #               - Does NOT have --logfile, --socat-opts, or --bind flags
 #               - Session name auto-generated as fwd-{lport}-{rhost}-{rport}
@@ -17,7 +17,7 @@
 # Version     : 1.0.2
 # ==============================================================================
 
-"""Forward mode handler — bidirectional port forwarding."""
+"""Forward mode handler -- bidirectional port forwarding."""
 
 from __future__ import annotations
 
@@ -233,7 +233,7 @@ def mode_forward(args: Any) -> None:
                 except RuntimeError:
                     log_warning(f"Dual-stack {alt_proto} forwarder failed on port {lport}")
             else:
-                log_warning(f"Port {lport} ({alt_proto}) already in use — skipping dual-stack")
+                log_warning(f"Port {lport} ({alt_proto}) already in use -- skipping dual-stack")
 
     log_info(f"Stop with: socat-manager stop {primary_sid}")
 
@@ -244,4 +244,4 @@ def _create_capture_log(path: str) -> None:
         fd: int = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         os.close(fd)
     except OSError:
-        pass
+        pass  # pre-creating the capture log is best-effort; socat creates it if absent
