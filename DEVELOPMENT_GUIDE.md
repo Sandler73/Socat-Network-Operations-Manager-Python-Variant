@@ -101,7 +101,7 @@ PYTHONPATH=src python3 -m pytest tests/unit/test_session.py::TestSessionReadAllF
 
 GitHub Actions runs several workflows on pushes and pull requests:
 
-- **Tests** (`test.yml`): the full suite across 8 Linux platforms — Ubuntu 22.04, Ubuntu 24.04 (Python 3.12 and 3.13), Debian 12, Kali Rolling, Rocky 9, Alma 9, and Arch Linux. Each job installs socat and the optional tools, runs the unit and integration suites, produces a coverage report, and uploads `coverage.xml` as an artifact from the Ubuntu 24.04 job.
+- **Tests** (`test.yml`): the full unit and integration suite on GitHub-hosted Ubuntu 22.04 and 24.04 runners across Python 3.12 and 3.13, plus Debian 11 and 12 container images that pin the same Python versions. Each job installs socat and the optional tools, and the Ubuntu 24.04 / Python 3.12 job uploads `coverage.xml` as an artifact. The framework itself runs on any Linux distribution with Python 3.12+ and socat (Kali, Rocky, Alma, Arch, and others); those are supported at runtime even though CI pins its matrix to the combinations above.
 - **Lint** (`lint.yml`): the ruff linter (E, W, F, I), the ruff flake8-bandit security scan (S-rules, with the by-design subprocess rules S603/S607 excluded), and a non-blocking mypy type check. Mirrors the `lint`, `security`, and `type-check` Makefile targets.
 - **CodeQL** (`codeql.yml`): GitHub's security-and-quality analysis over the Python source, on push, pull request, and a weekly schedule.
 - **Dependency Review** (`dependency-review.yml`): inspects dependency changes on pull requests and fails on a high-severity or disallowed-license introduction.
@@ -135,6 +135,6 @@ make test
 # 4. Build distribution:
 make dist
 # 5. Tag and push:
-git tag -a v1.0.1 -m "Release v1.0.1"
-git push origin v1.0.1
+git tag -a v1.0.2 -m "Release v1.0.2"
+git push origin v1.0.2
 ```
