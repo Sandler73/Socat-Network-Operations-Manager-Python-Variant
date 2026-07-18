@@ -9,7 +9,7 @@
 #               socat-manager batch --file database-services.conf.example
 # Notes       : Listening on database ports is typically used to capture or
 #               observe client connection attempts, not to serve a database.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 # MySQL / MariaDB
