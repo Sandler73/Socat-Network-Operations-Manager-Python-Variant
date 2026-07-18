@@ -4,7 +4,7 @@
 # Synopsis    : Shared pytest fixtures for socat-manager tests
 # Description : Provides temporary directory management, base dir override,
 #               mock session creation, and common test utilities.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 """Shared pytest fixtures for socat-manager tests."""
