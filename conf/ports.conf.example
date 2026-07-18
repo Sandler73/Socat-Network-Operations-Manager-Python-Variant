@@ -5,7 +5,7 @@
 # Description : One port per line. Lines starting with # are comments.
 #               Empty lines are ignored. Invalid ports are skipped with
 #               a warning. Use with: socat-manager batch --file ports.conf
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 # Common service ports (requires root/sudo for ports < 1024)
