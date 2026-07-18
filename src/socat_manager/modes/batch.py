@@ -1,7 +1,7 @@
 # ==============================================================================
 # MODULE      : socat_manager/modes/batch.py
 # ==============================================================================
-# Synopsis    : Batch mode handler — multiple listeners from port list/range/file
+# Synopsis    : Batch mode handler -- multiple listeners from port list/range/file
 # Description : Starts multiple listeners from a port list (--ports), port range
 #               (--range), or configuration file (--file). Each port gets an
 #               independent session. Exact parity with bash mode_batch() (lines 1902-2070).
@@ -16,7 +16,7 @@
 # Version     : 1.0.2
 # ==============================================================================
 
-"""Batch mode handler — multiple listeners from port list, range, or config file."""
+"""Batch mode handler -- multiple listeners from port list, range, or config file."""
 
 from __future__ import annotations
 
@@ -183,7 +183,7 @@ def mode_batch(args: Any) -> None:
         logfile: str = str(paths.log_dir / f"listener-{proto}-{port}.log")
 
         if not check_port_available(port, proto):
-            log_warning(f"Port {port} ({proto}) already in use — skipping")
+            log_warning(f"Port {port} ({proto}) already in use -- skipping")
             failed += 1
             continue
 
@@ -281,4 +281,4 @@ def _create_capture_log(path: str) -> None:
         fd: int = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         os.close(fd)
     except OSError:
-        pass
+        pass  # pre-creating the capture log is best-effort; socat creates it if absent
