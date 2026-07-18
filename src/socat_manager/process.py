@@ -5,20 +5,20 @@
 # Description : Implements the core process lifecycle operations with exact
 #               parity to the bash version:
 #
-#               - launch_socat_session()  — setsid + Popen, PID tracking,
+#               - launch_socat_session()  -- setsid + Popen, PID tracking,
 #                                           stability check, session registration
-#               - stop_session()          — 9-step stop sequence (SIGTERM →
+#               - stop_session()          -- 9-step stop sequence (SIGTERM →
 #                                           wait → SIGKILL → port cleanup)
-#               - check_port_available()  — protocol-scoped port availability
-#               - check_port_freed()      — retry-based port release verification
-#               - kill_by_port()          — last-resort socat-only port kill
+#               - check_port_available()  -- protocol-scoped port availability
+#               - check_port_freed()      -- retry-based port release verification
+#               - kill_by_port()          -- last-resort socat-only port kill
 #
 #               Bash equivalents:
-#                 launch_socat_session()  — lines 1221-1329
-#                 _stop_session()         — lines 2792-2914
-#                 check_port_available()  — lines 1347-1377
-#                 check_port_freed()      — lines 1388-1410
-#                 _kill_by_port()         — lines 2926-2987
+#                 launch_socat_session()  -- lines 1221-1329
+#                 _stop_session()         -- lines 2792-2914
+#                 check_port_available()  -- lines 1347-1377
+#                 check_port_freed()      -- lines 1388-1410
+#                 _kill_by_port()         -- lines 2926-2987
 #
 # Notes       : - subprocess.Popen with argument lists, NEVER shell=True
 #               - os.setsid as preexec_fn for process group isolation
@@ -81,7 +81,7 @@ from socat_manager.session import (
 
 # ==============================================================================
 # PROCESS LAUNCH
-# Bash equivalent: launch_socat_session() — lines 1221-1329
+# Bash equivalent: launch_socat_session() -- lines 1221-1329
 # ==============================================================================
 
 def launch_socat_session(
@@ -155,7 +155,7 @@ def launch_socat_session(
         stderr_target = stderr_file_handle
     else:
         # Normal mode: stderr → session error log
-        # Create with 0o600 permissions — error logs may contain command arguments
+        # Create with 0o600 permissions -- error logs may contain command arguments
         # and failure details that should be restricted to owner
         try:
             err_fd: int = os.open(str(error_log), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
@@ -178,7 +178,7 @@ def launch_socat_session(
     except FileNotFoundError:
         if stderr_file_handle:
             stderr_file_handle.close()
-        msg = f"socat not found in PATH — cannot launch session {sid} ({name})"
+        msg = f"socat not found in PATH -- cannot launch session {sid} ({name})"
         log_error(msg, "launch")
         raise RuntimeError(msg)
     except OSError as exc:
@@ -198,7 +198,7 @@ def launch_socat_session(
 
     # Retain the handle so the child's exit status can be collected. Without
     # it the process would linger as a zombie after exit, and a zombie still
-    # answers signal 0 — any liveness poll based on signal 0 alone would go on
+    # answers signal 0 -- any liveness poll based on signal 0 alone would go on
     # reporting the dead process as alive.
     register_child(process)
 
@@ -208,7 +208,7 @@ def launch_socat_session(
 
     if not process_is_running(socat_pid):
         msg = (
-            f"Session {sid} ({name}) failed — "
+            f"Session {sid} ({name}) failed -- "
             f"process {socat_pid} died immediately"
         )
         log_error(msg, "launch")
@@ -348,8 +348,8 @@ def process_is_running(pid: int) -> bool:
     collects the exit status of a terminated child, which both reports the
     truth and clears the zombie.
 
-    For any other process — one adopted from a previous invocation, for
-    instance — signal 0 is used, qualified by a zombie check so that an
+    For any other process -- one adopted from a previous invocation, for
+    instance -- signal 0 is used, qualified by a zombie check so that an
     uncollected process is not mistaken for a live one.
 
     Args:
@@ -412,7 +412,7 @@ def _line_matches_port(line: str, port: int) -> bool:
 
 # ==============================================================================
 # PORT AVAILABILITY CHECK
-# Bash equivalent: check_port_available() — lines 1347-1377
+# Bash equivalent: check_port_available() -- lines 1347-1377
 # ==============================================================================
 
 def check_port_available(port: int, proto: str) -> bool:
@@ -447,7 +447,7 @@ def check_port_available(port: int, proto: str) -> bool:
                     return False
             return True
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        pass  # ss is absent or timed out; fall through to the netstat probe below
 
     # Fallback: try netstat (same flag vocabulary)
     try:
@@ -463,7 +463,7 @@ def check_port_available(port: int, proto: str) -> bool:
                     return False
             return True
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        pass  # netstat is absent or timed out; no probe succeeded, so the caller assumes the port is free
 
     # No tool available; warn and proceed (assume available)
     log_warning(
@@ -475,7 +475,7 @@ def check_port_available(port: int, proto: str) -> bool:
 
 # ==============================================================================
 # PORT FREED VERIFICATION
-# Bash equivalent: check_port_freed() — lines 1388-1410
+# Bash equivalent: check_port_freed() -- lines 1388-1410
 # ==============================================================================
 
 def check_port_freed(
@@ -510,7 +510,7 @@ def check_port_freed(
 
 # ==============================================================================
 # KILL BY PORT (LAST RESORT)
-# Bash equivalent: _kill_by_port() — lines 2926-2987
+# Bash equivalent: _kill_by_port() -- lines 2926-2987
 # ==============================================================================
 
 def kill_by_port(port: int, proto: str) -> None:
@@ -522,7 +522,7 @@ def kill_by_port(port: int, proto: str) -> None:
     The query is scoped to both the transport and the address family of the
     supplied protocol. Without the family scope this function would enumerate
     listeners of the other family on the same port number and could terminate
-    an unrelated socat session — a TCP session on tcp6 while stopping a
+    an unrelated socat session -- a TCP session on tcp6 while stopping a
     session on tcp4, for example. The two are independent sockets and a stop
     directed at one must never disturb the other.
 
@@ -550,7 +550,7 @@ def kill_by_port(port: int, proto: str) -> None:
                     # Extract PIDs from ss -p output (format: "pid=NNNN")
                     _extract_pids_from_line(line, pids_found)
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        pass  # ss is absent or timed out; the netstat fallback below collects the PIDs instead
 
     # --- Fallback: try lsof ---
     # lsof expresses the address family as a separate selector (-i4 / -i6),
@@ -570,7 +570,7 @@ def kill_by_port(port: int, proto: str) -> None:
                     if line.isdigit():
                         pids_found.add(int(line))
         except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
+            pass  # netstat is absent or timed out; pids_found keeps whatever ss supplied
 
     # --- Kill only socat processes ---
     for pid in pids_found:
@@ -579,7 +579,7 @@ def kill_by_port(port: int, proto: str) -> None:
             try:
                 os.kill(pid, signal.SIGKILL)
             except OSError:
-                pass
+                pass  # the socat process exited between discovery and the kill; nothing left to signal
 
 
 def _extract_pids_from_line(line: str, pids: set[int]) -> None:
@@ -597,7 +597,7 @@ def _extract_pids_from_line(line: str, pids: set[int]) -> None:
         try:
             pids.add(int(match.group(1)))
         except ValueError:
-            pass
+            pass  # a pid= capture that is not an integer is not a usable PID; skip it
 
 
 def _is_socat_process(pid: int) -> bool:
@@ -622,7 +622,7 @@ def _is_socat_process(pid: int) -> bool:
 
 # ==============================================================================
 # 9-STEP STOP SEQUENCE
-# Bash equivalent: _stop_session() — lines 2792-2914
+# Bash equivalent: _stop_session() -- lines 2792-2914
 # ==============================================================================
 
 def stop_session(sid: str) -> bool:
@@ -634,12 +634,12 @@ def stop_session(sid: str) -> bool:
     Steps:
         1. Read PROTOCOL from session file
         2. Touch .stop signal file (tells watchdog not to restart)
-        3. os.killpg(pgid, SIGTERM) — SIGTERM entire process group
-        4. os.kill(pid, SIGTERM) — direct SIGTERM to PID
+        3. os.killpg(pgid, SIGTERM) -- SIGTERM entire process group
+        4. os.kill(pid, SIGTERM) -- direct SIGTERM to PID
         5. Wait up to STOP_GRACE_SECONDS in 0.5s intervals
         6. SIGKILL if still alive (process group + PID)
-        7. kill_by_port() — protocol-scoped fallback
-        8. check_port_freed() — verify port released
+        7. kill_by_port() -- protocol-scoped fallback
+        8. check_port_freed() -- verify port released
         9. Remove session file + signal files
 
     Args:
@@ -688,7 +688,7 @@ def stop_session(sid: str) -> bool:
     try:
         stop_file.touch(exist_ok=True)
     except OSError:
-        pass
+        pass  # the stop file is advisory for the watchdog; the signals below still stop the session
 
     # --- Step 3: SIGTERM the entire process group ---
     if pgid > 0:
@@ -697,7 +697,7 @@ def stop_session(sid: str) -> bool:
             log_debug(f"Sending SIGTERM to process group -{pgid}", "stop")
             os.killpg(pgid, signal.SIGTERM)
         except OSError:
-            pass
+            pass  # the process group is already gone, so there is nothing to terminate
 
     # --- Step 4: SIGTERM the specific PID + direct children ---
     if pid > 0:
@@ -706,7 +706,7 @@ def stop_session(sid: str) -> bool:
             log_debug(f"Sending SIGTERM to PID {pid}", "stop")
             os.kill(pid, signal.SIGTERM)
         except OSError:
-            pass
+            pass  # the PID is already gone, so there is nothing to terminate
         # Kill any direct children that may have been forked by socat
         # (belt-and-suspenders alongside the process group kill)
         try:
@@ -715,7 +715,7 @@ def stop_session(sid: str) -> bool:
                 capture_output=True, timeout=5,
             )
         except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
+            pass  # pkill is absent or timed out; the group and PID signals above already cover the children
 
     # --- Step 5: Wait grace period for clean shutdown ---
     is_dead: bool = False
@@ -738,7 +738,7 @@ def stop_session(sid: str) -> bool:
                 os.killpg(pgid, 0)
                 pgid_alive = True
             except OSError:
-                pass
+                pass  # the process group is gone, so pgid_alive stays False
 
         if not pid_alive and not pgid_alive:
             is_dead = True
@@ -758,28 +758,28 @@ def stop_session(sid: str) -> bool:
             try:
                 os.killpg(pgid, signal.SIGKILL)
             except OSError:
-                pass
+                pass  # the process group exited between the liveness check and the SIGKILL
 
         # SIGKILL the specific PID and its children
         if pid > 0:
             try:
                 os.kill(pid, signal.SIGKILL)
             except OSError:
-                pass
+                pass  # the PID exited between the liveness check and the SIGKILL
             try:
                 subprocess.run(
                     ["pkill", "-KILL", "-P", str(pid)],
                     capture_output=True, timeout=5,
                 )
             except (FileNotFoundError, subprocess.TimeoutExpired):
-                pass
+                pass  # pkill is absent or timed out; the group and PID have already been SIGKILLed
 
         time.sleep(DEFAULTS.stop_verify_interval)
 
     # --- Step 6b: Verify PID is truly dead ---
     # Use the zombie-aware liveness check rather than a bare signal-0 probe. A
     # child this process killed remains in the process table as a zombie until
-    # its exit status is collected, and a zombie answers signal 0 — so signal 0
+    # its exit status is collected, and a zombie answers signal 0 -- so signal 0
     # alone would misread a dead child as alive and report the stop as
     # incomplete. process_is_running() consults the retained handle and
     # collects the child when it observes termination.
@@ -795,7 +795,7 @@ def stop_session(sid: str) -> bool:
     if pid > 0:
         reap_child(pid)
 
-    # --- Step 7: Fallback — kill by port if still in use (protocol-scoped) ---
+    # --- Step 7: Fallback -- kill by port if still in use (protocol-scoped) ---
     if lport > 0:
         if not check_port_available(lport, proto):
             log_warning(
@@ -829,7 +829,7 @@ def stop_session(sid: str) -> bool:
         audit.record_session_end(sid, "stopped")
     else:
         log_warning(
-            f"Session {sid} ({name}) may not be fully stopped — "
+            f"Session {sid} ({name}) may not be fully stopped -- "
             "manual verification recommended",
             "stop",
         )
