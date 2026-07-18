@@ -2,16 +2,19 @@
 # FILE        : .github/workflows/test.yml
 # ==============================================================================
 # Synopsis    : CI test workflow for Socat Network Operations Manager (Python)
-# Description : Runs the full unit and integration suite across eight Linux
-#               targets that mirror the bash variant's CI matrix (Ubuntu 22.04;
-#               Ubuntu 24.04 on Python 3.12 and 3.13; Debian 12; Kali Rolling;
-#               Rocky 9; Alma 9; Arch Linux). Each job installs socat and the
-#               optional tools, runs pytest with coverage, and uploads
-#               coverage.xml as an artifact from the Ubuntu 24.04 job.
-# Notes       : - Triggers: push to main/develop and pull requests to main.
-#               - Declares least-privilege permissions (contents: read).
-#               - Cancels superseded in-progress runs for the same ref.
-# Version     : 1.0.1
+# Description : Runs the full unit and integration suite on GitHub-hosted Ubuntu
+#               runners across Python 3.12 and 3.13, and on Debian container
+#               images that pin the same Python versions. Every job installs
+#               socat and the optional tools, runs pytest with coverage, and the
+#               Ubuntu 24.04 / Python 3.12 job uploads coverage.xml.
+# Notes       : - The project is checked out at the repository root; the package
+#                 lives under src/ (resolved via PYTHONPATH).
+#               - Container jobs use the official python:* images, which pin the
+#                 interpreter and ship git, so checkout and the run steps work
+#                 without installing a newer Python by hand.
+#               - Triggers: push to main/develop and pull requests to main.
+#               - Least-privilege permissions; superseded runs are cancelled.
+# Version     : 1.0.2
 # ==============================================================================
 
 name: Tests
@@ -22,141 +25,122 @@ on:
   pull_request:
     branches: [main]
 
-# Least privilege: the test workflow only needs to read the repository.
 permissions:
   contents: read
 
-# Cancel superseded runs for the same ref so only the latest commit is tested.
 concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PYTHONPATH: src
 
 jobs:
+  # GitHub-hosted Ubuntu runners with a pinned Python from actions/setup-python.
   test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # --- Debian/Ubuntu family ---
-          - name: Ubuntu 22.04
+          - name: Ubuntu 22.04 (Python 3.12)
             os: ubuntu-22.04
             python: "3.12"
-            install: |
-              sudo apt-get update -qq
-              sudo apt-get install -y -qq socat openssl iproute2 util-linux
-
-          - name: Ubuntu 24.04
+          - name: Ubuntu 24.04 (Python 3.12)
             os: ubuntu-24.04
             python: "3.12"
-            install: |
-              sudo apt-get update -qq
-              sudo apt-get install -y -qq socat openssl iproute2 util-linux
-
           - name: Ubuntu 24.04 (Python 3.13)
             os: ubuntu-24.04
             python: "3.13"
-            install: |
-              sudo apt-get update -qq
-              sudo apt-get install -y -qq socat openssl iproute2 util-linux
-
-          - name: Debian 12
-            os: ubuntu-24.04
-            container: debian:12
-            python: "3.12"
-            install: |
-              apt-get update -qq
-              apt-get install -y -qq socat openssl iproute2 util-linux python3 python3-pip python3-venv
-
-          - name: Kali Rolling
-            os: ubuntu-24.04
-            container: kalilinux/kali-rolling
-            python: "3.12"
-            install: |
-              apt-get update -qq
-              apt-get install -y -qq socat openssl iproute2 util-linux python3 python3-pip python3-venv
-
-          # --- RHEL family ---
-          - name: Rocky Linux 9
-            os: ubuntu-24.04
-            container: rockylinux:9
-            python: "3.12"
-            install: |
-              dnf install -y --allowerasing socat openssl iproute util-linux python3.12 python3.12-pip
-
-          - name: AlmaLinux 9
-            os: ubuntu-24.04
-            container: almalinux:9
-            python: "3.12"
-            install: |
-              dnf install -y --allowerasing socat openssl iproute util-linux python3.12 python3.12-pip
-
-          # --- Arch family ---
-          - name: Arch Linux
-            os: ubuntu-24.04
-            container: archlinux:latest
-            python: "3.12"
-            install: |
-              pacman -Syu --noconfirm socat openssl iproute2 util-linux python python-pip
-
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container || '' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python (non-container)
-        if: ${{ !matrix.container }}
+      - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
       - name: Install system dependencies
-        run: ${{ matrix.install }}
-
-      - name: Install Python test dependencies
         run: |
-          pip3 install --break-system-packages pytest pytest-cov || \
-          pip3 install pytest pytest-cov
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq socat openssl iproute2 util-linux
 
-      - name: Verify socat installed
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pytest pytest-cov
+
+      - name: Verify tooling
         run: |
           socat -V | head -2
-          python3 --version
+          python --version
 
       - name: Run unit tests
-        run: |
-          cd socat-manager-python
-          python3 -m pytest tests/unit/ -v --tb=short
+        run: python -m pytest tests/unit/ -v --tb=short
 
       - name: Run integration tests
-        run: |
-          cd socat-manager-python
-          python3 -m pytest tests/integration/ -v --tb=short
+        run: python -m pytest tests/integration/ -v --tb=short
 
       - name: Run full suite with coverage
         run: |
-          cd socat-manager-python
-          python3 -m pytest tests/ -v --cov=socat_manager \
+          python -m pytest tests/ --cov=socat_manager \
             --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage report
-        if: ${{ matrix.name == 'Ubuntu 24.04' }}
+        if: ${{ matrix.name == 'Ubuntu 24.04 (Python 3.12)' }}
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: socat-manager-python/coverage.xml
+          path: coverage.xml
           if-no-files-found: warn
           retention-days: 14
 
       - name: Smoke test
         run: |
-          cd socat-manager-python
-          python3 -c "import socat_manager; print(f'v{socat_manager.__version__}')"
-          python3 -m socat_manager --version
-          python3 -m socat_manager --help
+          python -c "import socat_manager; print(f'v{socat_manager.__version__}')"
+          python -m socat_manager --version
+          python -m socat_manager --help
+
+  # Debian container images that pin the interpreter, validating a non-Ubuntu
+  # userland on both supported Python versions.
+  test-containers:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Debian 12 (Python 3.12)
+            image: python:3.12-bookworm
+          - name: Debian 12 (Python 3.13)
+            image: python:3.13-bookworm
+          - name: Debian 11 (Python 3.12)
+            image: python:3.12-bullseye
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq socat openssl iproute2 util-linux git
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pytest pytest-cov
+
+      - name: Verify tooling
+        run: |
+          socat -V | head -2
+          python --version
+
+      - name: Run full suite
+        run: python -m pytest tests/ -v --tb=short
+
+      - name: Smoke test
+        run: |
+          python -c "import socat_manager; print(f'v{socat_manager.__version__}')"
+          python -m socat_manager --version
