@@ -2,8 +2,8 @@
 # MODULE      : socat_manager/audit.py
 # ==============================================================================
 # Synopsis    : Persistent SQLite audit store for after-action review.
-# Description : Records framework events — session launches, stops, watchdog
-#               restarts, crash detections, and errors — to a SQLite database
+# Description : Records framework events -- session launches, stops, watchdog
+#               restarts, crash detections, and errors -- to a SQLite database
 #               so that a durable history survives the removal of the real-time
 #               session files. The store supplements, and never replaces, the
 #               KEY=VALUE session files that remain the source of truth for live
@@ -182,7 +182,7 @@ def _connect() -> sqlite3.Connection:
         try:
             os.chmod(str(audit_dir), 0o700)
         except OSError:
-            pass
+            pass  # tightening the directory mode is best-effort; the process umask still applies
 
     existed: bool = db_path.exists()
 
@@ -198,7 +198,7 @@ def _connect() -> sqlite3.Connection:
         try:
             os.chmod(str(db_path), 0o600)
         except OSError:
-            pass
+            pass  # tightening the database mode is best-effort; the process umask still applies
 
     _ensure_schema(conn)
     return conn
@@ -260,7 +260,7 @@ def _apply_redaction(fields: dict[str, Any]) -> tuple[dict[str, Any], bool]:
 
     Replaces the remote host in both the rhost column and any occurrence within
     the detail string with a fixed token. The remote port is retained, as are
-    certificate and key paths — the framework never records key material.
+    certificate and key paths -- the framework never records key material.
 
     Returns:
         A tuple of (possibly-redacted fields copy, redacted flag).
