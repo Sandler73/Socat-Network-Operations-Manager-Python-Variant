@@ -8,7 +8,7 @@
 #               line. Use with:
 #               socat-manager batch --file high-ports.conf.example
 # Notes       : All ports here are above 1024 and bind without root.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 10000
