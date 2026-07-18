@@ -114,7 +114,7 @@ socat-manager stop --all
 
 **Symptom**: `socat-manager status` shows ALIVE for a session whose process has exited.
 
-**Cause**: Race condition or stale session file. The status check uses `os.kill(pid, 0)` which can false-positive if the PID has been reused by another process.
+**Cause**: Stale session file combined with PID reuse. For a session adopted from an earlier invocation, liveness falls back to `os.kill(pid, 0)` qualified by a zombie-state check. An exited process that has not been collected is correctly read as dead, so the remaining edge case is a genuine PID reuse: the original process has exited and the kernel has assigned its PID to an unrelated, still-running process, which answers the liveness probe.
 
 **Fix**:
 ```bash
