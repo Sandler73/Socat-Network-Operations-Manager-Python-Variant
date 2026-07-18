@@ -7,7 +7,7 @@
 #               docs/, and the wiki pages: the document and location, the type
 #               of problem, a description, and an optional suggested correction.
 # Notes       : Rendered by GitHub's issue-forms engine.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 name: Documentation Issue
 description: Report an error, gap, or ambiguity in the documentation.
