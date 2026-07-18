@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="assets/images/Socat-Network-Operations-Manager-Python-Header.png" alt="Socat Network Operations Manager" width="50%" />
+</p>
+
+<p align="center">
   <h1 align="center">Socat Network Operations Manager</h1>
   <p align="center">
     <strong>Python Variant</strong><br>
