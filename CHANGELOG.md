@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.2] — 2026-07-17
+
+### Fixed
+
+- **CI workflows now run against the published repository layout.** `test.yml`, `lint.yml`, and `release.yml` previously changed into a `socat-manager-python/` subdirectory that exists only in the development tree; every job failed at that step once the project was published at the repository root. The workflows now run at the root, where `src/` and `tests/` live.
+- **The test matrix now pins the Python interpreter.** The previous matrix relied on each distribution's system Python, but Debian 12, Rocky 9, and Alma 9 ship Python older than 3.12, so a Python-3.12+ project could never pass on them. Testing now runs on GitHub-hosted Ubuntu 22.04 and 24.04 across Python 3.12 and 3.13, plus Debian 11 and 12 container images that pin the same versions. Container jobs install `git` before checkout.
+
+### Changed
+
+- `codeql.yml` sets `build-mode: none` for the Python analysis (the current recommended setting for interpreted languages).
+- Documentation now distinguishes runtime platform support (any Linux distribution with Python 3.12+ and socat) from the pinned CI test matrix.
+
+### Notes
+
+- CodeQL and Dependency Review also depend on repository settings: CodeQL's advanced workflow requires GitHub's "Default setup" to be disabled for the repository (otherwise the two conflict), and Dependency Review runs only on pull requests and requires the repository's Dependency Graph to be enabled.
+
+---
+
 ## [1.0.1] — 2026-07-15
 
 ### Fixed
