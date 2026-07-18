@@ -1,6 +1,6 @@
 # Socat Network Operations Manager — Usage Guide
 
-**Python Variant v1.0.1**
+**Python Variant v1.0.2**
 
 This guide provides complete instructions for installing, configuring, and executing
 `socat-manager` across three deployment models: standalone script execution, pip
