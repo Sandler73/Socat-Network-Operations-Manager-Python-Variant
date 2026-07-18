@@ -22,7 +22,7 @@
 #               deployments where both ends trust the certificate explicitly.
 #               For anything exposed to untrusted networks, use a certificate
 #               issued by a trusted certificate authority.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 [req]
