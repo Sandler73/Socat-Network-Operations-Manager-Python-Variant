@@ -1,4 +1,4 @@
-# Developer Guide — Exhaustive Code Reference
+# Developer Guide -- Exhaustive Code Reference
 
 ## Socat Network Operations Manager (Python Variant) v1.0.2
 
@@ -8,25 +8,25 @@ This document provides an exhaustive reference for every source module, every cl
 
 ## Table of Contents
 
-1. [__init__.py](#--init--) — Package Initialization
-1. [config.py](#config) — Configuration Constants, Frozen Dataclasses, and Protocol Maps
-1. [logging_setup.py](#logging-setup) — Structured Dual-Output Logging and Display Helpers
-1. [validation.py](#validation) — Whitelist Input Validators (Trust Boundary)
-1. [session.py](#session) — Session CRUD, Lookup, Locking, Migration, and Cleanup
-1. [commands.py](#commands) — Socat Command String Builders
-1. [process.py](#process) — Process Launch, Stop Sequence, and Port Availability
-1. [watchdog.py](#watchdog) — Monitor-First Auto-Restart with Exponential Backoff
-1. [certs.py](#certs) — TLS Self-Signed Certificate Generation
-1. [cli.py](#cli) — CLI Argument Parser (argparse)
-1. [__main__.py](#--main--) — Entry Point, Signal Handlers, and CLI Dispatch
-1. [menu.py](#menu) — Interactive TUI Menu System
-1. [modes/listen.py](#modeslisten) — Listen Mode Handler
-1. [modes/batch.py](#modesbatch) — Batch Mode Handler
-1. [modes/forward.py](#modesforward) — Forward Mode Handler
-1. [modes/tunnel.py](#modestunnel) — Tunnel Mode Handler
-1. [modes/redirect.py](#modesredirect) — Redirect Mode Handler
-1. [modes/status.py](#modesstatus) — Status Mode Handler
-1. [modes/stop.py](#modesstop) — Stop Mode Handler
+1. [__init__.py](#--init--) -- Package Initialization
+1. [config.py](#config) -- Configuration Constants, Frozen Dataclasses, and Protocol Maps
+1. [logging_setup.py](#logging-setup) -- Structured Dual-Output Logging and Display Helpers
+1. [validation.py](#validation) -- Whitelist Input Validators (Trust Boundary)
+1. [session.py](#session) -- Session CRUD, Lookup, Locking, Migration, and Cleanup
+1. [commands.py](#commands) -- Socat Command String Builders
+1. [process.py](#process) -- Process Launch, Stop Sequence, and Port Availability
+1. [watchdog.py](#watchdog) -- Monitor-First Auto-Restart with Exponential Backoff
+1. [certs.py](#certs) -- TLS Self-Signed Certificate Generation
+1. [cli.py](#cli) -- CLI Argument Parser (argparse)
+1. [__main__.py](#--main--) -- Entry Point, Signal Handlers, and CLI Dispatch
+1. [menu.py](#menu) -- Interactive TUI Menu System
+1. [modes/listen.py](#modeslisten) -- Listen Mode Handler
+1. [modes/batch.py](#modesbatch) -- Batch Mode Handler
+1. [modes/forward.py](#modesforward) -- Forward Mode Handler
+1. [modes/tunnel.py](#modestunnel) -- Tunnel Mode Handler
+1. [modes/redirect.py](#modesredirect) -- Redirect Mode Handler
+1. [modes/status.py](#modesstatus) -- Status Mode Handler
+1. [modes/stop.py](#modesstop) -- Stop Mode Handler
 
 ---
 
@@ -36,7 +36,7 @@ This document provides an exhaustive reference for every source module, every cl
 **Lines**: 21  
 **Purpose**: Package Initialization
 
-**Module docstring**: Socat Network Operations Manager — Python variant.
+**Module docstring**: Socat Network Operations Manager -- Python variant.
 
 ### Constants and Module-Level Variables
 
@@ -55,7 +55,7 @@ This document provides an exhaustive reference for every source module, every cl
 
 **Design Rationale**: This module is the single source of truth for all configuration values in the framework. Every constant, default, protocol mapping, field name, validation limit, and UI symbol is defined here and imported by other modules. This eliminates magic numbers and strings from the codebase and ensures consistency across all 21 source files.
 
-**Architecture Role**: Foundation layer — imported by every other module. No module-level imports from other socat_manager modules (zero circular dependency risk). All dataclasses use `frozen=True, slots=True` for immutability and memory efficiency.
+**Architecture Role**: Foundation layer -- imported by every other module. No module-level imports from other socat_manager modules (zero circular dependency risk). All dataclasses use `frozen=True, slots=True` for immutability and memory efficiency.
 
 **Key Design Decisions**:
 - `resolve_base_dir()` checks `SOCAT_MANAGER_BASE` environment variable first, then falls back to the script's parent directory. This allows operators to redirect all runtime artifacts (sessions/, logs/, certs/) to a custom location without code changes.
@@ -259,7 +259,7 @@ Matches bash SYM_* constants (lines 177-187) exactly.
 **Decorators**: `dataclass(frozen=True, slots=True)`  
 **Defined at**: line 311–326
 
-Session file field names — must match bash session_register() output.
+Session file field names -- must match bash session_register() output.
 
 **Attributes**:
 
@@ -360,7 +360,7 @@ Build the socket-listing flags that scope a query to one protocol. Both `ss` and
 ## `logging_setup.py`
 
 **Path**: `src/socat_manager/logging_setup.py`  
-**Lines**: 510  
+**Lines**: 525  
 **Purpose**: Structured Dual-Output Logging and Display Helpers
 
 **Module docstring**: Structured logging configuration for socat-manager.
@@ -461,7 +461,7 @@ Matches bash _ensure_dirs() (lines 213-228).
 #### `resolve_log_level(log_level: str | None = None, verbose: bool = False, quiet: bool = False) -> int`
 **Defined at**: line 221–264 (44 lines)
 
-Resolve the effective console log level from the CLI logging controls. Precedence, highest first: an explicit `log_level` name, then `verbose` (DEBUG), then `quiet` (WARNING), then the INFO default. `verbose` wins over `quiet` when both are set, because surfacing more diagnostic detail is the safer resolution, and an explicit `log_level` overrides both shortcuts. The level name is accepted case-insensitively and must be one of the offered levels — `NOTSET` and other non-offered logging attributes are rejected.
+Resolve the effective console log level from the CLI logging controls. Precedence, highest first: an explicit `log_level` name, then `verbose` (DEBUG), then `quiet` (WARNING), then the INFO default. `verbose` wins over `quiet` when both are set, because surfacing more diagnostic detail is the safer resolution, and an explicit `log_level` overrides both shortcuts. The level name is accepted case-insensitively and must be one of the offered levels -- `NOTSET` and other non-offered logging attributes are rejected.
 
 **Parameters**:
 
@@ -505,8 +505,19 @@ Get the application logger, initializing if needed.
 
 ---
 
+#### `set_verbose_mode(enabled: bool) -> None`
+**Defined at**: line 335–347 (13 lines)
+
+Set the module's verbose predicate. Callers configure logging through this helper rather than rebinding the module global directly, which keeps ownership of the flag inside this module. The predicate records whether DEBUG output is in force; the effective level itself is resolved by `resolve_log_level()`. Called by `__main__.initialize_logging()`.
+
+**Parameters**:
+
+- enabled: True when DEBUG console output is in force.
+
+---
+
 #### `log_debug(msg: str, component: str = 'main') -> None`
-**Defined at**: line 340–347 (8 lines)
+**Defined at**: line 355–362 (8 lines)
 
 Log a DEBUG message with component context.
 
@@ -518,7 +529,7 @@ Log a DEBUG message with component context.
 ---
 
 #### `log_info(msg: str, component: str = 'main') -> None`
-**Defined at**: line 350–357 (8 lines)
+**Defined at**: line 365–372 (8 lines)
 
 Log an INFO message with component context.
 
@@ -530,7 +541,7 @@ Log an INFO message with component context.
 ---
 
 #### `log_warning(msg: str, component: str = 'main') -> None`
-**Defined at**: line 360–367 (8 lines)
+**Defined at**: line 375–382 (8 lines)
 
 Log a WARNING message with component context.
 
@@ -542,7 +553,7 @@ Log a WARNING message with component context.
 ---
 
 #### `log_error(msg: str, component: str = 'main') -> None`
-**Defined at**: line 370–377 (8 lines)
+**Defined at**: line 385–392 (8 lines)
 
 Log an ERROR message with component context.
 
@@ -554,7 +565,7 @@ Log an ERROR message with component context.
 ---
 
 #### `log_critical(msg: str, component: str = 'main') -> None`
-**Defined at**: line 380–387 (8 lines)
+**Defined at**: line 395–402 (8 lines)
 
 Log a CRITICAL message with component context.
 
@@ -566,7 +577,7 @@ Log a CRITICAL message with component context.
 ---
 
 #### `log_success(msg: str, component: str = 'main') -> None`
-**Defined at**: line 390–409 (20 lines)
+**Defined at**: line 405–424 (20 lines)
 
 Log a success message with green checkmark on terminal.
 
@@ -581,7 +592,7 @@ message AND writes an INFO-level log entry.
 ---
 
 #### `log_session(session_id: str, level: str, msg: str) -> None`
-**Defined at**: line 418–451 (34 lines)
+**Defined at**: line 433–466 (34 lines)
 
 Write a log entry to a per-session audit log file.
 
@@ -600,7 +611,7 @@ maintain isolation between session audit trails.
 ---
 
 #### `print_banner(subtitle: str = '') -> None`
-**Defined at**: line 460–479 (20 lines)
+**Defined at**: line 475–494 (20 lines)
 
 Print a styled section banner to stderr.
 
@@ -611,7 +622,7 @@ Print a styled section banner to stderr.
 ---
 
 #### `print_section(title: str) -> None`
-**Defined at**: line 482–494 (13 lines)
+**Defined at**: line 497–509 (13 lines)
 
 Print a section header to stderr.
 
@@ -622,7 +633,7 @@ Print a section header to stderr.
 ---
 
 #### `print_kv(key: str, value: object) -> None`
-**Defined at**: line 497–510 (14 lines)
+**Defined at**: line 512–525 (14 lines)
 
 Print a key-value pair to stderr.
 
@@ -642,12 +653,12 @@ Print a key-value pair to stderr.
 
 **Module docstring**: Input validation for all user-supplied parameters.
 
-**Design Rationale**: This module implements the trust boundary — the point where untrusted user input is validated before it can reach any command builder, file operation, or system call. Every validator uses a whitelist approach (only explicitly allowed characters/patterns pass) rather than a blacklist (trying to catch bad characters). Whitelists fail closed (reject unknown input), while blacklists fail open.
+**Design Rationale**: This module implements the trust boundary -- the point where untrusted user input is validated before it can reach any command builder, file operation, or system call. Every validator uses a whitelist approach (only explicitly allowed characters/patterns pass) rather than a blacklist (trying to catch bad characters). Whitelists fail closed (reject unknown input), while blacklists fail open.
 
-**Architecture Role**: Called by all mode handlers at the beginning of execution, before any socat command is constructed. Also called by menu.py prompt functions for interactive input validation. The validators sit between user input and `commands.py` / `process.py` — nothing reaches a subprocess call without passing through at least one validator.
+**Architecture Role**: Called by all mode handlers at the beginning of execution, before any socat command is constructed. Also called by menu.py prompt functions for interactive input validation. The validators sit between user input and `commands.py` / `process.py` -- nothing reaches a subprocess call without passing through at least one validator.
 
 **Security Properties**:
-- All validators raise `ValidationError` (subclass of `ValueError`) on invalid input — never silently correct or sanitize
+- All validators raise `ValidationError` (subclass of `ValueError`) on invalid input -- never silently correct or sanitize
 - Shell metacharacters (`;|&$\`(){}[]<>!#`) rejected by hostname and filepath validators for defense-in-depth
 - Socat opts use strict character whitelist: `[a-zA-Z0-9=,.:/_-]`
 - IPv6 validation handles full, compressed (::), and mixed IPv4-mapped forms
@@ -713,7 +724,7 @@ Initialize a ValidationError.
 Validate a port number is numeric and within valid range (1-65535).
 
 Warns if the port is privileged (<1024) and the process is not running
-as root, but does NOT reject it — the user may have capabilities or
+as root, but does NOT reject it -- the user may have capabilities or
 plan to run with sudo.
 
 **Parameters**:
@@ -818,7 +829,7 @@ Rejects shell metacharacters to prevent command injection. Forbidden character p
 
 #### `is_ipv6_literal(host: str) -> bool`
 
-Report whether a host string is an IPv6 literal. A host is treated as an IPv6 literal when it contains a colon and consists only of hex digits and colons — the same shape the hostname validator uses to route a value into IPv6 handling. Hostnames and IPv4 literals contain no colons and return False. This is used to select the address family of a connector for a validated host, so an IPv6 target is reached over an IPv6 connector.
+Report whether a host string is an IPv6 literal. A host is treated as an IPv6 literal when it contains a colon and consists only of hex digits and colons -- the same shape the hostname validator uses to route a value into IPv6 handling. Hostnames and IPv4 literals contain no colons and return False. This is used to select the address family of a connector for a validated host, so an IPv6 target is reached over an IPv6 connector.
 
 **Parameters**:
 
@@ -881,7 +892,7 @@ Validate a file path is safe and accessible for use.
 
 Performs five checks in order:
   1. Non-empty path
-  2. Path traversal detection — component-based check (`".." in path.split("/")`) that correctly allows legal filenames like `file..ext` while blocking actual traversal sequences
+  2. Path traversal detection -- component-based check (`".." in path.split("/")`) that correctly allows legal filenames like `file..ext` while blocking actual traversal sequences
   3. Shell metacharacter rejection via `FILEPATH_FORBIDDEN_CHARS` from config
   4. File existence verification via `os.path.isfile()`
   5. File readability verification via `os.access(path, os.R_OK)`
@@ -1032,7 +1043,7 @@ paths (sessions/{sid}.session) and log messages.
 
 **Module docstring**: Session management: registration, lookup, cleanup, and locking.
 
-**Design Rationale**: Centralized session lifecycle management. Every socat process gets a registered session file that persists on disk, enabling cross-invocation tracking — sessions launched in one terminal can be queried and stopped from another terminal, even after the original management script exits.
+**Design Rationale**: Centralized session lifecycle management. Every socat process gets a registered session file that persists on disk, enabling cross-invocation tracking -- sessions launched in one terminal can be queried and stopped from another terminal, even after the original management script exits.
 
 **Architecture Role**: Core data layer. Called by `process.py` (register/unregister during launch/stop), `watchdog.py` (process identity update on restart, unregister on max restarts), all mode handlers (for session lookup), and `__main__.py` (legacy migration on startup).
 
@@ -1042,9 +1053,9 @@ paths (sessions/{sid}.session) and log messages.
 - Session files are named `{sid}.session`, so a session ID is the file stem and is identical to the `SESSION_ID` field by construction. The lookup and enumeration functions (`session_find_by_name`, `session_find_by_port`, `session_find_by_pid`, `session_get_all_ids`) derive the ID from the file name through `_sid_from_file()` rather than reading the `SESSION_ID` field back, so a matched file is not opened a second time to recover its ID. The helper skips a file whose name contains characters that would be unsafe in a constructed path.
 - `session_read_all_fields()` reads the entire file in a single pass and returns a dict. The listing and detail views both read once through it and then evaluate liveness from the fields already in hand, so neither re-opens the file for the alive check.
 - `process_alive()` decides liveness from a recorded PID and PGID that the caller has already read. `session_is_alive()` is a thin wrapper that reads a session's fields once and delegates to it. Callers holding a session's fields call `process_alive()` directly. The primary check routes through `process.process_is_running()`, so a socat process launched by this framework that has exited but not yet been collected is reported as dead rather than as a live zombie.
-- `session_lock()` is a context manager using `fcntl.flock` for advisory file locking. If the lock cannot be acquired (another process holds it), it logs a warning and proceeds — matching bash behavior where `_session_lock || log_debug "Proceeding without lock"`.
+- `session_lock()` is a context manager using `fcntl.flock` for advisory file locking. If the lock cannot be acquired (another process holds it), it logs a warning and proceeds -- matching bash behavior where `_session_lock || log_debug "Proceeding without lock"`.
 - `session_update_process()` rewrites only the process identity fields (`PID`, `PGID`) of an existing session, preserving every other field including the `STARTED` creation timestamp. It runs under the advisory lock and publishes the new record with an atomic rename, so the session file is never observed half-written. The watchdog calls it after every restart, which keeps the record aligned with the process that actually owns the port.
-- The stop sequence evaluates process death with the same zombie-aware liveness check the watchdog uses, and collects the child once death is confirmed. A socat process is a direct child of whatever process launched it, so when the launch and the stop happen in one process — the interactive menu — a killed child becomes a zombie until collected. Because a zombie answers signal 0, a stop path that checked liveness with a bare `os.kill(pid, 0)` would run the grace loop for its full duration and would report a genuinely dead process as possibly still alive. Consulting the retained handle and reaping the child removes both symptoms and prevents zombie process table entries from accumulating across repeated menu stops.
+- The stop sequence evaluates process death with the same zombie-aware liveness check the watchdog uses, and collects the child once death is confirmed. A socat process is a direct child of whatever process launched it, so when the launch and the stop happen in one process -- the interactive menu -- a killed child becomes a zombie until collected. Because a zombie answers signal 0, a stop path that checked liveness with a bare `os.kill(pid, 0)` would run the grace loop for its full duration and would report a genuinely dead process as possibly still alive. Consulting the retained handle and reaping the child removes both symptoms and prevents zombie process table entries from accumulating across repeated menu stops.
 - `session_cleanup_dead()` acquires the advisory lock before iterating to prevent TOCTOU races with concurrent stop/launch operations. Both PID AND PGID must be confirmed dead before removal.
 - `migrate_legacy_sessions()` converts v1 `.pid` files to v2.3 `.session` format, deriving PGID from the running process via `ps -o pgid=`. Dead legacy sessions are simply removed.
 - `session_detail()` shows 5 sections: metadata, process tree (pstree with ps fallback), port status (ss query protocol-scoped), socat command, associated log files.
@@ -1081,7 +1092,7 @@ session files concurrently.
 The lock is automatically released when the context manager exits.
 
 Yields:
-    None — the lock is held for the duration of the with block.
+    None -- the lock is held for the duration of the with block.
 
 **Raises**:
 
@@ -1103,7 +1114,7 @@ Creates a KEY=VALUE text file in the session directory with
 full metadata. File permissions are set to 0o600 to
 protect command strings and PID information.
 
-The file format is interoperable with the bash version — a user
+The file format is interoperable with the bash version -- a user
 can manage sessions created by either variant interchangeably.
 
 **Parameters**:
@@ -1132,7 +1143,7 @@ Update the tracked process identity of an existing session.
 
 Rewrites the `PID` and `PGID` fields of a session file while preserving every other field (name, mode, protocol, ports, socat command, correlation ID, launcher PID, and the `STARTED` creation timestamp) and the file header comments. `STARTED` records when the session was created and is left unchanged, since a restart changes which process the session owns, not when the session began.
 
-The session file is the authoritative record of which process a session owns. Any component that replaces the process behind a session — the watchdog, when it re-launches after an unexpected exit — calls this so that `session_is_alive()` and `stop_session()` act on the process that is currently running rather than a terminated predecessor.
+The session file is the authoritative record of which process a session owns. Any component that replaces the process behind a session -- the watchdog, when it re-launches after an unexpected exit -- calls this so that `session_is_alive()` and `stop_session()` act on the process that is currently running rather than a terminated predecessor.
 
 The rewrite runs under the advisory session lock. Content is written to a temporary file with 0o600 permissions in the session directory and then renamed over the original. Rename within a directory is atomic, so a concurrent reader observes either the complete previous record or the complete new one, never a partially written file.
 
@@ -1159,9 +1170,9 @@ The rewrite runs under the advisory session lock. Content is written to a tempor
 Remove a session file and all associated signal files.
 
 Called after confirmed process termination. Removes:
-    - {sid}.session  — session metadata
-    - {sid}.stop     — stop signal file
-    - {sid}.launching — PID staging file
+    - {sid}.session  -- session metadata
+    - {sid}.stop     -- stop signal file
+    - {sid}.launching -- PID staging file
 
 **Parameters**:
 
@@ -1237,7 +1248,7 @@ Check whether a recorded process identity is still running, working entirely fro
 
 Checks the primary PID first, then falls back to the process group; the session is alive if either responds. The group fallback covers the case where the primary process has been replaced but the group still holds live members. The primary check routes through `process.process_is_running()`, so an exited-but-uncollected socat child is reported as dead rather than as a live zombie.
 
-Because it takes the identity as arguments, a caller that has loaded a session's fields — the listing and detail views both do — evaluates liveness without a second read of the session file.
+Because it takes the identity as arguments, a caller that has loaded a session's fields -- the listing and detail views both do -- evaluates liveness without a second read of the session file.
 
 **Parameters**:
 
@@ -1378,7 +1389,7 @@ replaced but the process group is still alive.
 
 **Architecture Role**: Called by mode handlers (listen, batch, forward, tunnel, redirect) to produce the `cmd` argument list passed to `launch_socat_session()`. The builders look up protocol maps in `config.py` to translate user-facing protocol names into socat address format strings.
 
-**Security Properties**: Builders produce `list[str]` argument lists (never shell strings). All parameters have already been validated by the trust boundary (`validation.py`) before reaching the builders. The builders perform no validation themselves — they trust that inputs have been sanitized. This separation of concerns keeps the validation logic centralized.
+**Security Properties**: Builders produce `list[str]` argument lists (never shell strings). All parameters have already been validated by the trust boundary (`validation.py`) before reaching the builders. The builders perform no validation themselves -- they trust that inputs have been sanitized. This separation of concerns keeps the validation logic centralized.
 
 **Address Formatting**: socat address fields are colon-delimited, so a host embedded in an address is passed through `format_socat_host()` before use. An IPv6 literal contains colons of its own and is enclosed in square brackets, without which socat cannot determine where the address ends and the port begins and rejects the address. Hostnames and IPv4 literals contain no colons and pass through unchanged. Every builder that embeds a remote target applies this, and the `bind=` option in listen mode applies it to the local bind address.
 
@@ -1407,7 +1418,7 @@ Assemble validated socat listener-side source-filter options. Converts a source 
 
 Format a host for inclusion in a socat address.
 
-socat address fields are colon-delimited. An IPv6 literal carries colons of its own, so it is enclosed in square brackets to keep those colons from being read as field separators. Without the brackets an address such as `TCP6:2001:db8::1:443` is ambiguous — socat cannot tell where the address ends and the port begins — and is rejected.
+socat address fields are colon-delimited. An IPv6 literal carries colons of its own, so it is enclosed in square brackets to keep those colons from being read as field separators. Without the brackets an address such as `TCP6:2001:db8::1:443` is ambiguous -- socat cannot tell where the address ends and the port begins -- and is rejected.
 
 Hostnames and IPv4 literals contain no colons and are returned unchanged. A host that is already bracketed is returned unchanged, so the function is idempotent.
 
@@ -1572,14 +1583,14 @@ Protocol-aware: supports TCP and UDP independently.
 **Architecture Role**: Called by all 5 operational mode handlers for `launch_socat_session()` and `check_port_available()`. Called by `modes/stop.py` for `stop_session()`. The watchdog launches its own replacement processes and writes the resulting process identity back to the session record.
 
 **Key Design Decisions**:
-- `subprocess.Popen` with argument lists only — the `cmd` parameter is always a `list[str]`, never a shell string. The `shell=True` parameter is never used anywhere in this module or the entire codebase. This eliminates command injection as a vulnerability class.
+- `subprocess.Popen` with argument lists only -- the `cmd` parameter is always a `list[str]`, never a shell string. The `shell=True` parameter is never used anywhere in this module or the entire codebase. This eliminates command injection as a vulnerability class.
 - `os.setsid` as `preexec_fn` creates a new session and process group for each socat process. The PGID equals the PID (because the process is the session leader). This means: (a) killing the management script does not kill managed sessions, (b) `os.killpg(pgid, signal)` reliably targets the entire process tree including fork children, (c) sessions survive terminal disconnects.
-- `launch_socat_session()` returns a `(sid, pid)` tuple — the PID is needed by the watchdog to monitor the already-running process. In earlier versions, this returned only `sid`, forcing the watchdog to launch its own socat (causing the BUG-01 crash loop).
+- `launch_socat_session()` returns a `(sid, pid)` tuple -- the PID is needed by the watchdog to monitor the already-running process. In earlier versions, this returned only `sid`, forcing the watchdog to launch its own socat (causing the BUG-01 crash loop).
 - `close_fds=True` on Popen ensures no file descriptor leaks from the management script to the socat process.
 - Every launched socat process is a direct child of the management process, and its `Popen` handle is retained in a module-level registry keyed by PID. Retaining the handle is what makes liveness reporting truthful. When a child exits, the kernel keeps its process table entry until the parent collects the exit status; until then the entry is a zombie, and a zombie still answers signal 0. A liveness check written against `os.kill(pid, 0)` alone would therefore report an exited child as alive for as long as it went uncollected, and any poll waiting for that child to die would wait forever. `process_is_running()` consults the handle first, since polling it both collects a terminated child and reports the truth; it falls back to signal 0 qualified by a zombie check for processes this instance did not launch. `reap_child()` collects the status and drops the handle, so the registry only ever holds processes that are still running and cannot grow without bound.
 - Stability check: after launch, a 0.3-second delay followed by `process_is_running()` verifies the process survived startup. Because the launched process is a retained child, this consults its handle and distinguishes a running process from one that exited immediately and has not yet been collected. If the process died immediately (e.g., port already bound), the launch is reported as failed.
 - The 9-step stop sequence is protocol-scoped in two dimensions. The protocol model has four members (`tcp4`, `tcp6`, `udp4`, `udp6`), so scope is a transport and an address family, and every port operation carries both. `_scope_flags()` derives the socket-listing flags from the session's protocol: `-t`/`-u` selects the transport, `-4`/`-6` selects the family, `-l -n` restricts the listing to listening sockets. A `tcp4` operation queries `ss -t -4 -l -n`; the cleanup path adds `-p` to attach owning processes. `kill_by_port()` then kills only processes verified as socat via `/proc/{pid}/comm`. The family dimension is not optional: `tcp4` and `tcp6` listeners are independent sockets that can hold the same port number simultaneously, which is precisely what dual-stack operation creates. A transport-only scope would let a launch check treat an IPv6 listener as occupying the IPv4 port, and would let the cleanup path terminate the other family's socat session.
-- `pkill -TERM -P` and `pkill -KILL -P` in steps 4 and 6 kill direct children by parent PID — belt-and-suspenders alongside the process group kill for cases where a child escapes the group.
+- `pkill -TERM -P` and `pkill -KILL -P` in steps 4 and 6 kill direct children by parent PID -- belt-and-suspenders alongside the process group kill for cases where a child escapes the group.
 
 **Security Properties**: No shell=True, argument-list-only subprocess, setsid isolation, close_fds=True, stability verification through the retained child handle, port operations scoped to a single transport and address family, socat-only process verification before any signal, advisory locking, error log files created with 0o600 permissions, stop_session validates SID against path traversal before path construction. Terminated children are collected rather than left as zombie entries, so a long-running management process does not consume process table slots.
 
@@ -1720,7 +1731,7 @@ Last-resort function to kill socat processes on a specific port.
 
 Uses ss or lsof to find PIDs bound to the port. Only targets processes whose command name contains 'socat' to avoid killing unrelated services.
 
-The query is scoped to both the transport and the address family of the supplied protocol. Without the family scope this function would enumerate listeners of the other family on the same port number and could terminate an unrelated socat session — a session on `tcp6` while stopping a session on `tcp4`, for example. The two are independent sockets and a stop directed at one must never disturb the other. The `lsof` fallback carries the same scope through its `-i4` and `-i6` selectors.
+The query is scoped to both the transport and the address family of the supplied protocol. Without the family scope this function would enumerate listeners of the other family on the same port number and could terminate an unrelated socat session -- a session on `tcp6` while stopping a session on `tcp4`, for example. The two are independent sockets and a stop directed at one must never disturb the other. The `lsof` fallback carries the same scope through its `-i4` and `-i6` selectors.
 
 **Parameters**:
 
@@ -1792,15 +1803,15 @@ to prevent cross-protocol interference on dual-stack configurations.
 Steps:
     1. Read PROTOCOL from session file
     2. Touch .stop signal file (tells watchdog not to restart)
-    3. os.killpg(pgid, SIGTERM) — SIGTERM entire process group
-    4. os.kill(pid, SIGTERM) — direct SIGTERM to PID
+    3. os.killpg(pgid, SIGTERM) -- SIGTERM entire process group
+    4. os.kill(pid, SIGTERM) -- direct SIGTERM to PID
     5. Wait up to STOP_GRACE_SECONDS in 0.5s intervals
     6. SIGKILL if still alive (process group + PID)
-    7. kill_by_port() — protocol-scoped fallback
-    8. check_port_freed() — verify port released
+    7. kill_by_port() -- protocol-scoped fallback
+    8. check_port_freed() -- verify port released
     9. Remove session file + signal files
 
-The grace wait (step 5) and the death verification (step 6b) evaluate the PID with the zombie-aware liveness check rather than a bare `os.kill(pid, 0)`. A socat process launched in the same process as the stop — as it is from the interactive menu — is a direct child, and a killed child stays in the process table as a zombie until collected. A zombie still answers signal 0, so a signal-0 check would keep the grace loop running for the full period and would make the verification report a dead process as still alive. The liveness check consults the retained child handle and collects the process when it observes termination, and the child is collected once more before the session file is removed, so the result reflects the true outcome and no zombie or handle is left behind.
+The grace wait (step 5) and the death verification (step 6b) evaluate the PID with the zombie-aware liveness check rather than a bare `os.kill(pid, 0)`. A socat process launched in the same process as the stop -- as it is from the interactive menu -- is a direct child, and a killed child stays in the process table as a zombie until collected. A zombie still answers signal 0, so a signal-0 check would keep the grace loop running for the full period and would make the verification report a dead process as still alive. The liveness check consults the retained child handle and collects the process when it observes termination, and the child is collected once more before the session file is removed, so the result reflects the true outcome and no zombie or handle is left behind.
 
 **Parameters**:
 
@@ -1835,11 +1846,11 @@ The grace wait (step 5) and the death verification (step 6b) evaluate the PID wi
 
 **Behavioral Flow**:
 1. Phase 1 (Monitor): Poll `os.kill(initial_pid, 0)` every 1 second. Zero CPU when healthy. Check for `.stop` signal file on each poll.
-2. On death: Check `.stop` file — if present, exit gracefully (deliberate stop, not crash).
+2. On death: Check `.stop` file -- if present, exit gracefully (deliberate stop, not crash).
 3. Phase 2 (Restart Loop): Sleep with exponential backoff (`backoff_initial`, doubles each restart, capped at 60s). Launch replacement socat via `subprocess.Popen` with same parameters. Rewrite the session record with the replacement PID and PGID via `session_update_process()`. Monitor the replacement PID. Repeat until `max_restarts` reached.
 4. On max restarts: Log error, call `session_unregister()`, exit thread.
 
-**Session Record Ownership**: The session file is the authoritative record of which process a session owns, and it is what `session_is_alive()` and `stop_session()` read. A restart replaces the process, so the watchdog writes the new PID and PGID back to the session file before it begins monitoring the replacement. Without that write-back the record would continue to name the terminated predecessor: status output would report the session dead while the replacement still held the port, and the stop sequence would signal a PID that no longer exists — leaving the live replacement running and reachable only through the port-based fallback. A failed replacement launch does not touch the record; the watchdog exits and the session is unregistered.
+**Session Record Ownership**: The session file is the authoritative record of which process a session owns, and it is what `session_is_alive()` and `stop_session()` read. A restart replaces the process, so the watchdog writes the new PID and PGID back to the session file before it begins monitoring the replacement. Without that write-back the record would continue to name the terminated predecessor: status output would report the session dead while the replacement still held the port, and the stop sequence would signal a PID that no longer exists -- leaving the live replacement running and reachable only through the port-based fallback. A failed replacement launch does not touch the record; the watchdog exits and the session is unregistered.
 
 **Configurable Parameters**: `max_restarts` (default 10, CLI flag `--max-restarts`), `backoff_initial` (default 1 second, CLI flag `--backoff`). Both are prompted in the interactive menu when watchdog is enabled.
 
@@ -1862,7 +1873,7 @@ On each restart, exponential backoff is applied starting from
 backoff_initial seconds, doubling each time, capped at 60 seconds.
 
 The .stop signal file tells the watchdog "this was a deliberate
-stop — do NOT restart."
+stop -- do NOT restart."
 
 **Parameters**:
 
@@ -1925,7 +1936,7 @@ Launch a replacement socat process for the watchdog.
 #### `_handle_stop_signal(stop_file: Path, session_id: str, session_name: str) -> None`
 **Defined at**: line 325–343 (19 lines)
 
-Handle a .stop signal file — graceful watchdog exit.
+Handle a .stop signal file -- graceful watchdog exit.
 
 **Parameters**:
 
@@ -2011,7 +2022,7 @@ via os.open() to avoid race conditions between create and chmod.
 
 **Module docstring**: Persistent SQLite audit store for after-action review.
 
-**Design Rationale**: A supplement to — never a replacement for — the KEY=VALUE session files, which remain the source of truth for live state and bash interoperability. The store gives a durable history that survives session-file removal. `sqlite3` is standard-library, so this adds no external runtime dependency.
+**Design Rationale**: A supplement to -- never a replacement for -- the KEY=VALUE session files, which remain the source of truth for live state and bash interoperability. The store gives a durable history that survives session-file removal. `sqlite3` is standard-library, so this adds no external runtime dependency.
 
 **Architecture Role**: Emission points call the `record_*` functions from `process.launch_socat_session` (launch + session start), `process.stop_session` (stop / stop_failed + session end), and `watchdog.watchdog_loop` (crash, restart, and the `watchdog_exhausted` end state). The read functions back the `audit` subcommand via `modes/audit_view.py`.
 
@@ -2150,7 +2161,7 @@ Return session lifecycle summaries, most recent first.
 - `RawDescriptionHelpFormatter` on all subparsers preserves the epilog examples formatting.
 - `--max-restarts` and `--backoff` are on all 5 operational mode parsers (not just listen) because any mode can use watchdog.
 - `help` and `version` are subcommands (not just flags) so operators can type `socat-manager help` and `socat-manager version` in addition to `--help` and `--version`.
-- The main parser epilog includes a complete mini-reference with examples, session management explanation, protocol selection guide, reliability notes, and logging paths — matching bash `show_main_help()`.
+- The main parser epilog includes a complete mini-reference with examples, session management explanation, protocol selection guide, reliability notes, and logging paths -- matching bash `show_main_help()`.
 
 ### Functions
 
@@ -2186,7 +2197,7 @@ Build and return the complete CLI argument parser.
 ### Functions
 
 #### `_handle_sigterm(signum: int, frame: Any) -> None`
-**Defined at**: line 48–59 (12 lines)
+**Defined at**: line 50–61 (12 lines)
 
 Handle SIGTERM for clean shutdown.
 
@@ -2205,7 +2216,7 @@ Only cleans up the management script itself.
 ---
 
 #### `_handle_sigint(signum: int, frame: Any) -> None`
-**Defined at**: line 62–71 (10 lines)
+**Defined at**: line 64–73 (10 lines)
 
 Handle SIGINT (Ctrl+C) for clean exit.
 
@@ -2221,7 +2232,7 @@ Handle SIGINT (Ctrl+C) for clean exit.
 ---
 
 #### `_handle_sighup(signum: int, frame: Any) -> None`
-**Defined at**: line 74–85 (12 lines)
+**Defined at**: line 76–87 (12 lines)
 
 Handle SIGHUP (terminal hangup) for clean exit.
 
@@ -2240,7 +2251,7 @@ Matches bash trap 'cleanup_handler HUP' HUP behavior.
 ---
 
 #### `check_socat() -> None`
-**Defined at**: line 92–129 (38 lines)
+**Defined at**: line 94–131 (38 lines)
 
 Verify socat is installed and in PATH.
 
@@ -2261,7 +2272,7 @@ Prints installation instructions if not found.
 
 Resolve the logging controls and configure logging for this invocation.
 
-This is the single initialization point for logging. It runs once per invocation, immediately after argument parsing and before any path that produces output — the interactive menu, the mode handlers, and the startup banner all depend on it. The effective console level is resolved with `resolve_log_level()` from three optional controls in order of precedence — an explicit `--log-level`, then `--verbose` (DEBUG), then `--quiet` (WARNING), defaulting to INFO — and applied before the logger is configured, because that level is fixed once the handlers are attached. The `verbose_mode` predicate is kept aligned with the resolved level.
+This is the single initialization point for logging. It runs once per invocation, immediately after argument parsing and before any path that produces output -- the interactive menu, the mode handlers, and the startup banner all depend on it. The effective console level is resolved with `resolve_log_level()` from three optional controls in order of precedence -- an explicit `--log-level`, then `--verbose` (DEBUG), then `--quiet` (WARNING), defaulting to INFO -- and applied before the logger is configured, because that level is fixed once the handlers are attached. The `verbose_mode` predicate is kept aligned with the resolved level.
 
 **Parameters**:
 
@@ -2306,13 +2317,13 @@ No arguments (or 'menu' subcommand) launches interactive mode.
 
 **Design Rationale**: Full-featured interactive TUI that provides guided, validated input for every operational mode. Designed for operators who prefer menu-driven interfaces over remembering CLI flags. Every prompt validates input and supports cancel (`q`/`quit`/`cancel`/`back`) to return to the parent menu.
 
-**Architecture Role**: Alternative entry point alongside CLI. Constructs the same argument lists that the CLI would produce, then passes them to `dispatch_mode()` via `_confirm_and_execute()`. This means the menu and CLI produce identical behavior — the menu is purely a UI layer.
+**Architecture Role**: Alternative entry point alongside CLI. Constructs the same argument lists that the CLI would produce, then passes them to `dispatch_mode()` via `_confirm_and_execute()`. This means the menu and CLI produce identical behavior -- the menu is purely a UI layer.
 
 **Key Design Decisions**:
 - `_MenuCancel` exception is the cancel propagation mechanism. Every prompt function raises it on cancel keywords or Ctrl+C/Ctrl+D. Submenu functions catch it to return to the root menu.
 - `_confirm_and_execute()` wraps `dispatch_mode()` in `try/except` catching `SystemExit`, `KeyboardInterrupt`, and generic `Exception`. This ensures the menu always returns to the main loop after execution, even if a mode handler calls `sys.exit(1)` on validation failure. This was BUG-03 fix.
 - After listener execution, `_offer_paired_forward()` asks the user if they want to configure a forward with the listener's port pre-filled. This simplifies the common listen-then-forward workflow.
-- `_collect_common_flags()` handles protocol, dual-stack, capture, watchdog (with configurable max_restarts and backoff prompts), and session name — shared across all 5 operational modes.
+- `_collect_common_flags()` handles protocol, dual-stack, capture, watchdog (with configurable max_restarts and backoff prompts), and session name -- shared across all 5 operational modes.
 - Ctrl+C at the main menu prompt exits gracefully with "Goodbye". Ctrl+C during submenu or execution returns to the menu loop.
 - The socat opts prompt shows 3 examples (`reuseaddr,fork`, `bind=10.0.0.1`, `keepalive,nodelay`) to guide operators.
 
@@ -2423,7 +2434,7 @@ Prompt for a validated protocol.
 #### `_prompt_name(text: str = 'Session name', default: str = '') -> str`
 **Defined at**: line 198–207 (10 lines)
 
-Prompt for a validated session name (optional — empty returns default).
+Prompt for a validated session name (optional -- empty returns default).
 
 **Security annotations**:
 
@@ -2626,7 +2637,7 @@ until the user exits (option 0).
 **Lines**: 284  
 **Purpose**: Listen Mode Handler
 
-**Module docstring**: Listen mode handler — single TCP/UDP listener on a port.
+**Module docstring**: Listen mode handler -- single TCP/UDP listener on a port.
 
 ### Functions
 
@@ -2677,7 +2688,7 @@ Create a capture log file with restrictive permissions (0o600).
 **Lines**: 284  
 **Purpose**: Batch Mode Handler
 
-**Module docstring**: Batch mode handler — multiple listeners from port list, range, or config file.
+**Module docstring**: Batch mode handler -- multiple listeners from port list, range, or config file.
 
 ### Functions
 
@@ -2728,7 +2739,7 @@ Create a capture log file with restrictive permissions (0o600).
 **Lines**: 247  
 **Purpose**: Forward Mode Handler
 
-**Module docstring**: Forward mode handler — bidirectional port forwarding.
+**Module docstring**: Forward mode handler -- bidirectional port forwarding.
 
 ### Functions
 
@@ -2772,7 +2783,7 @@ Create a capture log file with restrictive permissions (0o600).
 **Lines**: 339  
 **Purpose**: Tunnel Mode Handler
 
-**Module docstring**: Tunnel mode handler — TLS-encrypted tunnel via socat+OpenSSL.
+**Module docstring**: Tunnel mode handler -- TLS-encrypted tunnel via socat+OpenSSL.
 
 ### Functions
 
@@ -2804,7 +2815,7 @@ openssl subprocess argument.
 
 - Validates input through whitelist validators before use
 - `--cn` validated via `validate_session_name()` before reaching openssl subprocess
-- Detects and warns on cert/key mismatch (one provided without the other) — forces regeneration instead of silently ignoring the provided file
+- Detects and warns on cert/key mismatch (one provided without the other) -- forces regeneration instead of silently ignoring the provided file
 - May call sys.exit() on fatal errors
 
 ---
@@ -2828,7 +2839,7 @@ Create a capture log file with restrictive permissions (0o600).
 **Lines**: 231  
 **Purpose**: Redirect Mode Handler
 
-**Module docstring**: Redirect mode handler — transparent port redirection.
+**Module docstring**: Redirect mode handler -- transparent port redirection.
 
 ### Functions
 
@@ -2872,7 +2883,7 @@ Create a capture log file with restrictive permissions (0o600).
 **Lines**: 168  
 **Purpose**: Status Mode Handler
 
-**Module docstring**: Status mode handler — session listing, detail, and cleanup.
+**Module docstring**: Status mode handler -- session listing, detail, and cleanup.
 
 ### Functions
 
@@ -2917,7 +2928,7 @@ Used in verbose mode to show system-level listener information.
 **Lines**: 207  
 **Purpose**: Stop Mode Handler
 
-**Module docstring**: Stop mode handler — session termination by various selectors.
+**Module docstring**: Stop mode handler -- session termination by various selectors.
 
 ### Functions
 
