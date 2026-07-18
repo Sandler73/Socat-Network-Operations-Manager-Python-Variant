@@ -1,6 +1,6 @@
 # Security Policy and Threat Analysis
 
-## Socat Network Operations Manager v1.0.1
+## Socat Network Operations Manager v1.0.2
 
 This document provides the complete security analysis for the Socat Network Operations Manager Python variant. It covers the security architecture, threat model, input validation matrix, attack surface analysis, secure coding practices, and vulnerability management process.
 
