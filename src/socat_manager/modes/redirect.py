@@ -1,21 +1,21 @@
 # ==============================================================================
 # MODULE      : socat_manager/modes/redirect.py
 # ==============================================================================
-# Synopsis    : Redirect mode handler — transparent port redirection
+# Synopsis    : Redirect mode handler -- transparent port redirection
 # Description : Redirects/proxies traffic transparently between a local port
 #               and a remote target. Bidirectional with optional traffic capture.
 #               Exact parity with bash mode_redirect() (lines 2372-2481).
 #
 #
-#               - Bidirectional (no -u flag) — same as forward
-#               - No --remote-proto — listen and connect use same protocol
+#               - Bidirectional (no -u flag) -- same as forward
+#               - No --remote-proto -- listen and connect use same protocol
 #               - Session name auto-generated as redir-{proto}-{lport}-{rhost}-{rport}
 #               - Does NOT have --logfile, --socat-opts, or --bind flags
 #
 # Version     : 1.0.2
 # ==============================================================================
 
-"""Redirect mode handler — transparent port redirection."""
+"""Redirect mode handler -- transparent port redirection."""
 
 from __future__ import annotations
 
@@ -217,7 +217,7 @@ def mode_redirect(args: Any) -> None:
             except RuntimeError:
                 log_warning(f"Dual-stack {alt_proto} redirector failed on port {lport}")
         elif alt_proto:
-            log_warning(f"Port {lport} ({alt_proto}) already in use — skipping dual-stack")
+            log_warning(f"Port {lport} ({alt_proto}) already in use -- skipping dual-stack")
 
     log_info(f"Stop with: socat-manager stop {primary_sid}")
 
@@ -228,4 +228,4 @@ def _create_capture_log(path: str) -> None:
         fd: int = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         os.close(fd)
     except OSError:
-        pass
+        pass  # pre-creating the capture log is best-effort; socat creates it if absent
