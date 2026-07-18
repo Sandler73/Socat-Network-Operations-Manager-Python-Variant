@@ -38,6 +38,8 @@ from socat_manager.logging_setup import (
     log_critical,
     log_debug,
     log_info,
+    resolve_log_level,
+    set_verbose_mode,
     setup_logging,
 )
 
@@ -55,7 +57,7 @@ def _handle_sigterm(signum: int, frame: Any) -> None:
         signum: Signal number received.
         frame: Current stack frame (unused).
     """
-    log_info("Received SIGTERM — management script exiting", "signal")
+    log_info("Received SIGTERM -- management script exiting", "signal")
     sys.exit(0)
 
 
@@ -81,7 +83,7 @@ def _handle_sighup(signum: int, frame: Any) -> None:
         signum: Signal number received.
         frame: Current stack frame (unused).
     """
-    log_info("Received SIGHUP — management script exiting", "signal")
+    log_info("Received SIGHUP -- management script exiting", "signal")
     sys.exit(0)
 
 
@@ -126,7 +128,7 @@ def check_socat() -> None:
             socat_path: str = shutil.which("socat") or "socat"
             log_debug(f"socat found: {socat_path} ({version_line})", "deps")
     except (subprocess.TimeoutExpired, OSError):
-        pass
+        pass  # the version banner is informational only; socat availability is reported by check_socat()
 
 
 # ==============================================================================
@@ -137,7 +139,7 @@ def initialize_logging(args: Any) -> None:
     """Resolve the logging controls and configure logging for this invocation.
 
     This is the single initialization point for logging. It runs once per
-    invocation, before any path that produces output — the interactive menu,
+    invocation, before any path that produces output -- the interactive menu,
     the mode handlers, and the startup banner all depend on it. The effective
     level must be resolved and applied before the logger is configured, because
     the configured level is fixed once the handlers are attached.
@@ -154,9 +156,7 @@ def initialize_logging(args: Any) -> None:
     """
     import logging
 
-    import socat_manager.logging_setup as ls
-
-    level: int = ls.resolve_log_level(
+    level: int = resolve_log_level(
         log_level=getattr(args, "log_level", None),
         verbose=getattr(args, "verbose", False),
         quiet=getattr(args, "quiet", False),
@@ -164,7 +164,7 @@ def initialize_logging(args: Any) -> None:
 
     # Keep the convenience predicate aligned with the resolved level so any
     # reader of verbose_mode continues to reflect "are we at DEBUG?".
-    ls.verbose_mode = level == logging.DEBUG
+    set_verbose_mode(level == logging.DEBUG)
 
     setup_logging(log_level=level)
 
@@ -291,7 +291,7 @@ def main() -> None:
     migrate_legacy_sessions()
 
     # Check socat availability for operational modes
-    # Skip for status, stop, audit, help — they don't need socat
+    # Skip for status, stop, audit, help -- they don't need socat
     needs_socat: bool = args.mode not in ("status", "stop", "audit", "help", "version")
     if needs_socat:
         check_socat()
