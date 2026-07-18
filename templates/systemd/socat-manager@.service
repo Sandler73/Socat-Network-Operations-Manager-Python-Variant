@@ -26,7 +26,7 @@
 #
 #               Adjust User, the install path, and SOCAT_MANAGER_BASE to match
 #               your deployment. Replace the placeholders marked CHANGE-ME.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 [Unit]
