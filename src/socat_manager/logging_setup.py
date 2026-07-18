@@ -62,7 +62,7 @@ _dirs_ensured: bool = False
 # Matches bash USE_COLOR logic (lines 199-202).
 USE_COLOR: Final[bool] = hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
 
-# Verbose mode flag — toggled by --verbose / -v flag at CLI parse time.
+# Verbose mode flag -- toggled by --verbose / -v flag at CLI parse time.
 # Retained as a convenience predicate ("are we at DEBUG?"); the effective level
 # is resolved from the full set of logging controls by resolve_log_level().
 verbose_mode: bool = False
@@ -192,7 +192,7 @@ class StructuredFormatter(logging.Formatter):
         # Level name padded to 8 chars for alignment
         level: str = record.levelname.ljust(8)
 
-        # Core structured message (no color — for file output)
+        # Core structured message (no color -- for file output)
         base_msg: str = (
             f"{timestamp} [{level}] [corr:{CORRELATION_ID}] "
             f"[{component}] {record.getMessage()}"
@@ -227,10 +227,10 @@ def resolve_log_level(
     """Resolve the effective console log level from the CLI logging controls.
 
     Precedence, highest first:
-        1. ``log_level`` — an explicit level name (authoritative).
-        2. ``verbose`` — maps to DEBUG.
-        3. ``quiet`` — maps to WARNING.
-        4. default — INFO.
+        1. ``log_level`` -- an explicit level name (authoritative).
+        2. ``verbose`` -- maps to DEBUG.
+        3. ``quiet`` -- maps to WARNING.
+        4. default -- INFO.
 
     ``verbose`` wins over ``quiet`` when both are supplied: surfacing more
     diagnostic detail is the safer default than silently suppressing it. An
@@ -238,7 +238,7 @@ def resolve_log_level(
     always be selected regardless of the convenience flags.
 
     Args:
-        log_level: Optional level name (case-insensitive) — one of
+        log_level: Optional level name (case-insensitive) -- one of
                    DEBUG, INFO, WARNING, ERROR, CRITICAL.
         verbose: True when --verbose / -v was supplied.
         quiet: True when --quiet / -q was supplied.
@@ -332,6 +332,21 @@ def get_logger() -> logging.Logger:
     return logger
 
 
+def set_verbose_mode(enabled: bool) -> None:
+    """Set the module's verbose predicate.
+
+    Callers configure logging through this helper rather than rebinding the
+    module global directly, which keeps ownership of the flag inside this
+    module. The predicate records whether DEBUG output is in force; the
+    effective level itself is resolved by resolve_log_level().
+
+    Args:
+        enabled: True when DEBUG console output is in force.
+    """
+    global verbose_mode
+    verbose_mode = enabled
+
+
 # ==============================================================================
 # CONVENIENCE LOG FUNCTIONS
 # Match bash log_debug(), log_info(), log_success(), etc. (lines 271-276)
@@ -411,7 +426,7 @@ def log_success(msg: str, component: str = "main") -> None:
 
 # ==============================================================================
 # SESSION-LEVEL LOGGING
-# Per-session audit trail — writes directly to session log files.
+# Per-session audit trail -- writes directly to session log files.
 # Matches bash log_session() (lines 286-302).
 # ==============================================================================
 
@@ -467,12 +482,12 @@ def print_banner(subtitle: str = "") -> None:
         header: str = f"{COLORS.bold}{COLORS.cyan}{'=' * 60}{COLORS.reset}"
         title: str = f"{COLORS.bold}  SOCAT Manager{COLORS.reset}"
         if subtitle:
-            title += f" {COLORS.dim}— {subtitle}{COLORS.reset}"
+            title += f" {COLORS.dim}-- {subtitle}{COLORS.reset}"
     else:
         header = "=" * 60
         title = "  SOCAT Manager"
         if subtitle:
-            title += f" — {subtitle}"
+            title += f" -- {subtitle}"
 
     print(header, file=sys.stderr)
     print(title, file=sys.stderr)
