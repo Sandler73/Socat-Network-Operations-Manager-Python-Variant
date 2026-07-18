@@ -9,7 +9,7 @@
 #               pyproject.toml.
 # Notes       : - Triggers: pull requests to main.
 #               - Fails on a high-severity or disallowed-license introduction.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 
 name: Dependency Review
