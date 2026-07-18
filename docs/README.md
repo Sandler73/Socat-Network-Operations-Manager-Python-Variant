@@ -11,7 +11,7 @@ The framework is organized as a layered architecture:
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Entry Points                         │
-│    __main__.py (CLI dispatch)  |  menu.py (TUI)        │
+│    __main__.py (CLI dispatch)  |  menu.py (TUI)         │
 │    socat-manager.py (standalone runner)                 │
 ├─────────────────────────────────────────────────────────┤
 │                    Mode Handlers                        │
@@ -22,7 +22,7 @@ The framework is organized as a layered architecture:
 │  process.py    - Launch, stop, port checks              │
 │  session.py    - CRUD, lookup, locking, migration       │
 │  watchdog.py   - Monitor + auto-restart                 │
-│  commands.py   - Socat command string builders           │
+│  commands.py   - Socat command string builders          │
 │  certs.py      - TLS certificate generation             │
 ├─────────────────────────────────────────────────────────┤
 │                    Foundation                           │
