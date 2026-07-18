@@ -9,7 +9,7 @@
 # Notes       : GitHub reads this file to build the "New issue" chooser. The
 #               contact links are not forms; they redirect to the security
 #               advisory flow and to Discussions.
-# Version     : 1.0.1
+# Version     : 1.0.2
 # ==============================================================================
 blank_issues_enabled: false
 contact_links:
